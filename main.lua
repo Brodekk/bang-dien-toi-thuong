@@ -1742,6 +1742,71 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
+local BUILD = "2026-11-12 b1"
+local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
+
+local function self_update()
+    local src = debug.getinfo(1, "S").source or ""
+    local dir = src:match("^@(.*)/main%.lua$")
+    if not dir then return false, "Không xác định được thư mục plugin." end
+    local tmp = "/mnt/us/vn_dash/update_main.lua"
+    os.remove(tmp)
+    os.execute('curl -sS -m 40 --connect-timeout 10 -L -A "Mozilla/5.0" -o "' .. tmp .. '" "' .. UPDATE_URL .. "?t=" .. os.time() .. '" 2>/dev/null')
+    local f = io.open(tmp, "rb")
+    if not f then return false, "Tải thất bại (kiểm tra Wi-Fi)." end
+    local body = f:read("*a")
+    f:close()
+    if #body < 50000 or not body:find("return VNMarket", 1, true) then
+        return false, "File tải về không hợp lệ, giữ nguyên bản đang chạy."
+    end
+    local fn, err = loadfile(tmp)
+    if not fn then return false, "File tải về lỗi cú pháp, giữ nguyên bản đang chạy: " .. tostring(err):sub(1, 90) end
+    local cur = io.open(dir .. "/main.lua", "rb")
+    local old = cur and cur:read("*a")
+    if cur then cur:close() end
+    if old == body then return true, "Đã là bản mới nhất.", false end
+    if old then
+        local b = io.open("/mnt/us/vn_dash/main_backup.lua", "wb")
+        if b then
+            b:write(old)
+            b:close()
+        end
+    end
+    local out = io.open(dir .. "/main.lua", "wb")
+    if not out then return false, "Không ghi được file plugin." end
+    out:write(body)
+    out:close()
+    return true, "Đã cập nhật xong. Đang khởi động lại KOReader…", true
+end
+
+function VNDash:doUpdate()
+    local it = { title = "Cập nhật ứng dụng", source = "Phiên bản hiện tại: " .. BUILD, when = "", loading = true, fetched = true }
+    self.detail = it
+    UIManager:setDirty(self, "full")
+    UIManager:scheduleIn(0.4, function()
+        local NetworkMgr = require("ui/network/manager")
+        NetworkMgr:runWhenOnline(function()
+            local ok, r1, r2, r3 = pcall(self_update)
+            it.loading = false
+            if not ok then
+                it.sections = { { "Kết quả", "Lỗi: " .. tostring(r1):sub(1, 120) } }
+            else
+                it.sections = { { "Kết quả", r2 or "" } }
+            end
+            UIManager:setDirty(self, "full")
+            if ok and r1 and r3 then
+                UIManager:scheduleIn(2, function()
+                    local okd, Device = pcall(require, "device")
+                    self:close()
+                    if okd and Device and Device.canRestart and Device:canRestart() then
+                        UIManager:restartKOReader()
+                    end
+                end)
+            end
+        end)
+    end)
+end
+
 function VNDash:openProfile()
     local s = self.stock
     if not s or type(s.d) ~= "table" then return end
@@ -2036,7 +2101,10 @@ function VNDash:buttonList()
             { "LÀM MỚI", function() self:refresh(true) end, false, 1 },
         }
     elseif self.tab == "calendar" then
-        return { { "CẬP NHẬT", function() UIManager:setDirty(self, "full") end, true, 1 } }
+        return {
+            { "CẬP NHẬT APP", function() self:doUpdate() end, false, 1.3 },
+            { "LÀM MỚI", function() UIManager:setDirty(self, "full") end, true, 1 },
+        }
     end
     return { { "LÀM MỚI", function() self:refresh(true) end, true, 1 } }
 end
