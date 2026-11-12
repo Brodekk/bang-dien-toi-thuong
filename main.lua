@@ -1796,7 +1796,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-12 b3"
+local BUILD = "2026-11-12 b4"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local function self_update()
@@ -1982,8 +1982,17 @@ function VNDash:lookup(raw, back)
 end
 
 -- ----- vẽ màn hình -----
+local function crumb(txt_)
+    local f = io.open("/mnt/us/vn_dash/paint.txt", "w")
+    if f then
+        f:write(os.date("%H:%M:%S ") .. txt_ .. "\n")
+        f:close()
+    end
+end
+
 function VNDash:paintTo(bb, x, y)
     local W, H = self.dimen.w, self.dimen.h
+    crumb("start tab=" .. tostring(self.tab) .. " mode=" .. tostring(self.mode) .. " heat=" .. tostring(self.heat_mode) .. "/" .. tostring(self.heat_metric) .. " detail=" .. tostring(self.detail ~= nil))
     self.hits = {}
     bb:paintRect(x, y, W, H, WHITE)
     local ok, err = pcall(function()
@@ -2023,6 +2032,7 @@ function VNDash:paintTo(bb, x, y)
         log("paint error: " .. tostring(err))
         txt(bb, "Lỗi hiển thị: " .. tostring(err), 40, 260, 24, { max_width = W - 80 })
     end
+    crumb("done tab=" .. tostring(self.tab) .. " mode=" .. tostring(self.mode))
 end
 
 function VNDash:drawHeader(bb, W, H)
@@ -2624,6 +2634,14 @@ end
 
 -- bản đồ nhiệt: treemap theo vốn hoá (ước tính) hoặc GTGD, độ đậm theo % thay đổi
 local function squarify(items, x, y, w, h)
+    do
+        local k = 1
+        while k <= #items do
+            local v = items[k].v
+            if type(v) ~= "number" or v ~= v or v <= 0 or v == math.huge then table.remove(items, k) else k = k + 1 end
+        end
+    end
+    if #items == 0 or not (w > 4 and h > 4) then return end
     local total = 0
     for _, it in ipairs(items) do total = total + it.v end
     if total <= 0 then return end
@@ -2631,6 +2649,7 @@ local function squarify(items, x, y, w, h)
     local i = 1
     while i <= #items do
         local side = math.min(w, h)
+        if not (side > 2) then break end
         local row, sum, cur = {}, 0, 1e18
         local j = i
         while j <= #items do
@@ -2677,10 +2696,11 @@ end
 
 function VNDash:heatCell(bb, it)
     local r = it.r
+    if not (it.x and it.y and it.w and it.h) then return end
     local x0, y0 = math.floor(it.x + 0.5), math.floor(it.y + 0.5)
     local x1, y1 = math.floor(it.x + it.w + 0.5), math.floor(it.y + it.h + 0.5)
     local cw, ch = x1 - x0 - 3, y1 - y0 - 3
-    if cw <= 4 or ch <= 4 then return end
+    if not (cw > 4 and ch > 4 and cw < 4000 and ch < 4000 and x0 > -10 and y0 > -10 and x0 < 4000 and y0 < 4000) then return end
     local GRAY5 = Blitbuffer.COLOR_GRAY_5
     local pct = r.pct or 0
     local ap = math.abs(pct)
@@ -2763,7 +2783,7 @@ function VNDash:drawHeat(bb, W, H)
             local x0, y0 = math.floor(sec.x + 0.5), math.floor(sec.y + 0.5)
             local x1, y1 = math.floor(sec.x + sec.w + 0.5), math.floor(sec.y + sec.h + 0.5)
             local cw, ch = x1 - x0 - 2, y1 - y0 - 2
-            if cw > 20 and ch > 20 then
+            if cw > 20 and ch > 20 and cw < 4000 and ch < 4000 and x0 > -10 and y0 > -10 then
                 bb:paintBorder(x0, y0, cw, ch, 3, BLACK, 0)
                 local hh = 0
                 if ch >= 70 and cw >= 110 then
@@ -3295,7 +3315,7 @@ function VNDash:drawCard(bb, x, y, w, h, it)
         local yy = ay
         while yy < ay + ah - P(4) do
             bb:paintRect(ax, yy, P(10), P(4), BLACK)
-            yy = yy + P(10)
+            yy = yy + math.max(2, P(10))
         end
     else
         bb:paintBorder(ax, ay, P(10), ah, 2, Blitbuffer.COLOR_GRAY, P(5))
@@ -3355,7 +3375,7 @@ function VNDash:drawCard(bb, x, y, w, h, it)
         local dx = gx
         while dx < gx + gw do
             bb:paintRect(dx, ry, P(8), 2, BLACK)
-            dx = dx + P(16)
+            dx = dx + math.max(2, P(16))
         end
     end
     bb:paintRect(gx, gy + gh, gw, 2, BLACK)
@@ -3426,7 +3446,7 @@ function VNDash:drawStock(bb, W, H)
         local yy = ay
         while yy < ay + ah - P(4) do
             bb:paintRect(ax, yy, P(10), P(4), BLACK)
-            yy = yy + P(10)
+            yy = yy + math.max(2, P(10))
         end
     else
         bb:paintBorder(ax, ay, P(10), ah, 2, Blitbuffer.COLOR_GRAY, P(5))
