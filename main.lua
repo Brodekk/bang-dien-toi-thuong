@@ -44,6 +44,22 @@ do
 end
 
 local function log(msg)
+    local sf = io.open(LOGFILE, "r")
+    if sf then
+        local size = sf:seek("end")
+        if size and size > 60000 then
+            sf:seek("set", size - 15000)
+            local tail = sf:read("*a")
+            sf:close()
+            local wf = io.open(LOGFILE, "w")
+            if wf then
+                wf:write("... (log rút gọn)\n" .. tail)
+                wf:close()
+            end
+        else
+            sf:close()
+        end
+    end
     local f = io.open(LOGFILE, "a")
     if f then
         f:write(os.date("%H:%M:%S ") .. tostring(msg) .. "\n")
@@ -692,7 +708,7 @@ if type(cfg.sector_extra) == "table" then
 end
 
 local function load_top()
-    local raw = fetch(API .. "/stock/exchange/hose", 45)
+    local raw = fetch(API .. "/stock/exchange/hose", 30)
     local j = decode(raw)
     local arr = j and j.data
     if type(arr) ~= "table" then
@@ -1544,6 +1560,16 @@ end
 -- ----- điều khiển -----
 function VNDash:close()
     if self.tick then UIManager:unschedule(self.tick) end
+    if self.autowifi_saved then
+        pcall(function()
+            if self.old_autowifi == nil then
+                G_reader_settings:delSetting("auto_disable_wifi")
+            else
+                G_reader_settings:saveSetting("auto_disable_wifi", self.old_autowifi)
+            end
+        end)
+        self.autowifi_saved = nil
+    end
     os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 0 >/dev/null 2>&1")
     if self.old_rotation ~= nil and self.old_rotation ~= Screen:getRotationMode() then
         Screen:setRotationMode(self.old_rotation)
@@ -1601,8 +1627,11 @@ function VNDash:refresh(manual)
         self:schedule()
         return
     end
+    local t0 = os.time()
     local function finish()
         self.busy = false
+        collectgarbage("collect")
+        log(string.format("refresh %s: %ds, mem=%dKB", tostring(key), os.time() - t0, collectgarbage("count")))
         self.refresh_count = self.refresh_count + 1
         local m = (self.refresh_count % 8 == 0 or manual) and "full" or "ui"
         if self:dataKey() == key then UIManager:setDirty(self, m) end
@@ -1617,7 +1646,7 @@ function VNDash:refresh(manual)
     end
     self.busy = true
     local NetworkMgr = require("ui/network/manager")
-    NetworkMgr:runWhenOnline(function()
+    local function work()
         local ok, err = pcall(function()
             if key == "indices" then
                 local urls = {}
@@ -1656,7 +1685,32 @@ function VNDash:refresh(manual)
         end)
         if not ok then log("refresh error (" .. tostring(key) .. "): " .. tostring(err)) end
         finish()
+    end
+    if manual then
+        NetworkMgr:runWhenOnline(work)
+        return
+    end
+    local okn, online = pcall(function()
+        local pr = io.popen('curl -s -m 6 --connect-timeout 5 -o /dev/null -w "%{http_code}" https://iboard-query.ssi.com.vn/ 2>/dev/null', "r")
+        if not pr then return true end
+        local code = pr:read("*a") or ""
+        pr:close()
+        return code:match("^%d%d%d$") ~= nil and code ~= "000"
     end)
+    if okn and not online then
+        -- mất Wi-Fi: thử bật lại im lặng, không bật hộp thoại chặn màn hình
+        self.offline = true
+        self.busy = false
+        pcall(function() NetworkMgr:turnOnWifi(nil, false) end)
+        log("offline: thử kết nối lại sau 30s")
+        if self:dataKey() == key then UIManager:setDirty(self, "ui") end
+        if self.tick then UIManager:unschedule(self.tick) end
+        self.tick = function() self:refresh() end
+        UIManager:scheduleIn(30, self.tick)
+        return
+    end
+    self.offline = false
+    work()
 end
 
 function VNDash:openEdit(kind)
@@ -1742,7 +1796,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-12 b2"
+local BUILD = "2026-11-12 b3"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local function self_update()
@@ -1985,7 +2039,8 @@ function VNDash:drawHeader(bb, W, H)
     else
         right = os.date("%H:%M  %d/%m/%Y")
     end
-    if self.updated and W > 1500 and self.tab ~= "calendar" then right = right .. "  ·  cập nhật " .. self.updated end
+    if self.offline then right = "Mất Wi-Fi · đang thử kết nối lại…" end
+    if not self.offline and self.updated and W > 1500 and self.tab ~= "calendar" then right = right .. "  ·  cập nhật " .. self.updated end
     txt(bb, right, W - mx - 34, 56, 26, { right = true, color = WHITE })
 end
 
@@ -3458,6 +3513,11 @@ end
 function VNDash:start()
     os.execute("mkdir -p /mnt/us/vn_dash")
     os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 1 >/dev/null 2>&1")
+    pcall(function()
+        self.old_autowifi = G_reader_settings:readSetting("auto_disable_wifi")
+        G_reader_settings:saveSetting("auto_disable_wifi", false)
+        self.autowifi_saved = true
+    end)
     self.old_rotation = Screen:getRotationMode()
     if cfg.rotation ~= nil and cfg.rotation ~= self.old_rotation then
         Screen:setRotationMode(cfg.rotation)
