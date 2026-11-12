@@ -1742,7 +1742,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-12 b1"
+local BUILD = "2026-11-12 b2"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local function self_update()
@@ -2042,6 +2042,11 @@ function VNDash:buttonList()
                 self.heat_mode = allm and "sector" or "all"
                 UIManager:setDirty(self, "full")
             end, true, 1.2 }
+            local byval = (self.heat_metric == "value")
+            list[#list + 1] = { byval and "VỐN HOÁ" or "GTGD", function()
+                self.heat_metric = byval and "cap" or "value"
+                UIManager:setDirty(self, "full")
+            end, true, 1.1 }
         end
         if self.mode == "sector" then
             local detail = self.sec_open ~= nil
@@ -2545,7 +2550,24 @@ function VNDash:drawWatch(bb, W, H)
     end
 end
 
--- bản đồ nhiệt: treemap theo GTGD, độ đậm theo % thay đổi
+-- số cổ phiếu niêm yết (tỷ cp, xấp xỉ) để ước tính vốn hoá; API SSI không trả số này
+local SHARES = {
+    VIC = 7.7, VHM = 4.1, VRE = 2.28, VPL = 2.4, BCM = 1.03, KBC = 0.96, NVL = 2.0, KDH = 1.0, DXG = 0.9, NLG = 0.4, PDR = 0.99, CII = 0.25, IDC = 0.33, SZC = 0.1, SIP = 0.1,
+    VCB = 8.36, BID = 7.03, CTG = 5.37, TCB = 7.08, MBB = 7.9, VPB = 7.93, ACB = 5.15, STB = 1.89, HDB = 3.5, TPB = 2.2, VIB = 3.0, SHB = 3.6, LPB = 3.0, MSB = 2.0, SSB = 2.95, OCB = 2.47, EIB = 1.84, NAB = 1.5, BVH = 0.74,
+    SSI = 2.0, VND = 1.5, VCI = 0.6, HCM = 0.7, VIX = 1.5, SHS = 1.2, MBS = 0.6,
+    HPG = 7.67, HSG = 0.6, NKG = 0.45, FPT = 1.7, CMG = 0.3, MWG = 1.47, FRT = 0.14, PNJ = 0.34, DGW = 0.2,
+    VNM = 2.09, MSN = 1.43, SAB = 1.28, MCH = 0.7, KDC = 0.26, SBT = 0.7, QNS = 0.36, DBC = 0.38, HAG = 1.0,
+    GAS = 2.4, PLX = 1.27, PVD = 0.55, PVS = 0.48, BSR = 5.8, OIL = 1.0, POW = 2.34, REE = 0.46, GEG = 0.35, PGV = 1.0,
+    VJC = 0.54, HVN = 2.2, GMD = 0.3, HAH = 0.12, VSC = 0.1, VHC = 0.22, ANV = 0.13, DGC = 0.38, DPM = 0.39, DCM = 0.53,
+    GVR = 4.0, PHR = 0.14, DRC = 0.12, DHG = 0.13, IMP = 0.07, TRA = 0.05, VCG = 0.56, CTD = 0.1, HBC = 0.35, TNG = 0.12, MSH = 0.05, TCM = 0.09, GEX = 0.9, GEE = 0.35, TCH = 0.8, VGC = 0.45, VPI = 0.2, VCK = 0.25, DMX = 0.5,
+}
+local function heat_size(r, metric)
+    if metric == "value" then return r.value or 0 end
+    local sh = SHARES[r.sym] or 0.06
+    return sh * 1e9 * (r.price or 0)
+end
+
+-- bản đồ nhiệt: treemap theo vốn hoá (ước tính) hoặc GTGD, độ đậm theo % thay đổi
 local function squarify(items, x, y, w, h)
     local total = 0
     for _, it in ipairs(items) do total = total + it.v end
@@ -2660,20 +2682,25 @@ function VNDash:drawHeat(bb, W, H)
     end
     local GRAY5 = Blitbuffer.COLOR_GRAY_5
     local mapw, maph = W - 2 * mx, bottom - top - 36
+    local metric = self.heat_metric or "cap"
     if self.heat_mode == "all" then
         local rows = {}
         for _, r in ipairs(t.rows) do
             if (r.value or 0) > 0 then rows[#rows + 1] = r end
         end
-        table.sort(rows, function(a, b) return a.value > b.value end)
+        table.sort(rows, function(a, b) return heat_size(a, metric) > heat_size(b, metric) end)
         local items = {}
-        for i = 1, math.min(70, #rows) do items[i] = { r = rows[i], v = rows[i].value } end
+        for i = 1, math.min(70, #rows) do items[i] = { r = rows[i], v = heat_size(rows[i], metric) } end
         squarify(items, mx, top, mapw, maph)
         for _, it in ipairs(items) do self:heatCell(bb, it) end
     else
         local secs = {}
         for _, sc in ipairs(t.sectors or {}) do
-            if sc.value > 0 then secs[#secs + 1] = { sc = sc, v = sc.value } end
+            local tot = 0
+            for _, r in ipairs(sc.rows) do
+                if (r.value or 0) > 0 then tot = tot + heat_size(r, metric) end
+            end
+            if tot > 0 then secs[#secs + 1] = { sc = sc, v = tot } end
         end
         table.sort(secs, function(a, b) return a.v > b.v end)
         squarify(secs, mx, top, mapw, maph)
@@ -2690,17 +2717,19 @@ function VNDash:drawHeat(bb, W, H)
                     txt(bb, sec.sc.name .. "  " .. sfmt(sec.sc.pct, 2) .. "%", x0 + 8, y0 + 4, 19, { bold = true, max_width = cw - 16 })
                 end
                 local items = {}
-                for i = 1, math.min(16, #sec.sc.rows) do
-                    local r = sec.sc.rows[i]
-                    if (r.value or 0) > 0 then items[#items + 1] = { r = r, v = r.value } end
+                for _, r in ipairs(sec.sc.rows) do
+                    if (r.value or 0) > 0 then items[#items + 1] = { r = r, v = heat_size(r, metric) } end
                 end
+                table.sort(items, function(a, b) return a.v > b.v end)
+                while #items > 16 do table.remove(items) end
                 squarify(items, x0 + 3, y0 + 3 + hh, cw - 6, ch - 6 - hh)
                 for _, it in ipairs(items) do self:heatCell(bb, it) end
             end
         end
     end
     local mode_txt = (self.heat_mode == "all") and "Toàn thị trường" or "Theo nhóm ngành"
-    txt(bb, mode_txt .. "  ·  Ô to = GTGD lớn  ·  Đặc = tăng (đậm = mạnh)  ·  Sọc = giảm (dày = mạnh)  ·  Bấm ô xem mã", mx, bottom - 30, 21, { color = GRAY5, max_width = mapw })
+    local met_txt = (metric == "value") and "Cỡ ô = GTGD" or "Cỡ ô = vốn hoá ước tính"
+    txt(bb, mode_txt .. "  ·  " .. met_txt .. "  ·  Đặc = tăng (đậm = mạnh)  ·  Sọc = giảm (dày = mạnh)  ·  Bấm ô xem mã", mx, bottom - 30, 21, { color = GRAY5, max_width = mapw })
 end
 
 function VNDash:drawTop(bb, W, H)
