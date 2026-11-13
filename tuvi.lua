@@ -255,6 +255,137 @@ Tứ Hóa gốc (can Nhâm): Thiên Lương Hóa Lộc (Thân), Tử Vi Hóa Quy
 }},
 }
 
+-- ===== Bản đồ sao (Placidus, 28/11/2002 10:10 Bắc Giang) + Thần số học (TRẦN ĐỨC HOAN) =====
+local DATA2 = {
+{ tab = "TỔNG QUAN", items = {
+{ t = "Bức tranh trong một câu", body = [[Một người đi tìm sự thật và muốn nói nó ra cho đông người nghe, nhưng bên trong luôn tự chấm điểm mình khắt khe.
+
+Bản đồ sao và thần số học ở đây nói khá giống nhau, và giống luôn cả lá số tử vi: đầu óc sắc, lời nói có sức nặng, khác người, nội tâm nhạy và tự phê bình. Chỗ mạnh nhất cũng là chỗ dễ vấp nhất.]] },
+{ t = "Bộ ba chính của bản đồ sao", body = [[• Mặt Trời Nhân Mã, nhà 10: sống để đi tìm ý nghĩa, tự do, tầm nhìn; bản ngã gắn với sự nghiệp và hình ảnh trước xã hội.
+• Mặt Trăng Xử Nữ, nhà 8: cảm xúc phân tích, chu toàn, hay lo; xử lý cảm xúc ở tầng sâu, kín, ít khi nói ra.
+• Cung Mọc Bảo Bình (0°10'), có Thiên Vương và Hải Vương ở nhà 1: bề ngoài độc lập, khác thường, lý tưởng, khó đoán.
+
+Lưu ý: Cung Mọc chỉ vừa qua ranh giới Ma Kết. Nếu giờ sinh sớm hơn vài phút, Cung Mọc là Ma Kết (nghiêm, thực tế hơn). Giờ 10:10 thuộc giờ Tị, khớp với lá số tử vi.]] },
+{ t = "Các con số chính (thần số học)", body = [[• Đường đời 7 (từ tổng 16/7): người tìm tòi, cần hiểu bản chất, cần thời gian một mình.
+• Sứ mệnh 11 và Linh hồn 11 (hai số Master): trực giác, truyền cảm hứng, nhạy cảm cao, dễ căng thẳng thần kinh.
+• Nhân cách 9: người ngoài thấy bạn rộng lượng, có lý tưởng.
+• Thái độ 3: phản ứng đầu tiên là nói, đùa, thể hiện.
+• Ngày sinh 1: tự lập, muốn làm theo cách mình.
+• Trưởng thành 9 (từ khoảng 40 tuổi): hướng tới phục vụ, cho đi.
+
+Tôi tự tính lại các số này và khớp với báo cáo bạn gửi. Báo cáo còn ghi nợ nghiệp 13; tôi chỉ tìm ra được nợ 16 (ở Đường đời).]] },
+{ t = "Ba điểm cả ba hệ thống cùng nói", body = [[1. Lời nói và tư duy sắc: Cự Môn ở Mệnh (tử vi) · Sao Thủy trùng Diêm Vương (sao) · Sứ mệnh 11 (số).
+2. Nội tâm nhạy, tự phê bình: Thái Âm hãm ở cung Thân · Mặt Trăng Xử Nữ vuông góc Mặt Trời, Sao Thủy, Diêm Vương · Đường đời 7.
+3. Khác người, nhiều ý tưởng: Địa Không ở Mệnh · Bảo Bình mọc có Thiên Vương, Hải Vương · hai số 11.
+
+Khi ba hệ thống độc lập cùng chỉ một hướng, đó là phần đáng tin nhất để bạn soi lại mình. Xem chi tiết ở tab ĐỐI CHIẾU.]] },
+}},
+{ tab = "TÍNH CÁCH", items = {
+{ t = "Đầu óc: Nhân Mã + Diêm Vương", body = [[Mặt Trời và Sao Thủy cùng ở Nhân Mã: nghĩ lớn, thích triết lý, nói thẳng, ghét bị gò bó. Sao Thủy trùng Diêm Vương (cách 3°30'): suy nghĩ đào sâu, đọc được động cơ ẩn của người khác, lời nói có sức nặng, khi tranh luận thì không buông.
+
+Mặt trái: dễ thành "người giảng chân lý", nghe để phản bác hơn là để hiểu. Sao Thủy lục hợp Hải Vương và có góc ngũ phân với Thiên Vương: ý tưởng lạ, trực giác tốt, viết hay.]] },
+{ t = "Cảm xúc: Mặt Trăng Xử Nữ bị vuông góc", body = [[Mặt Trăng vuông góc với Mặt Trời, Sao Thủy, Diêm Vương và Nút Bắc. Bên ngoài (Nhân Mã) muốn bay; bên trong (Xử Nữ) lo từng chi tiết và tự hỏi "mình đã đủ tốt chưa".
+
+Kết quả: bạn có thể nói rất tự tin rồi về nhà soi lại từng câu mình đã nói. Căng thẳng thần kinh hay dồn vào cơ thể (ngủ, tiêu hóa), khớp với gợi ý về sức khỏe trong lá số tử vi.
+
+Cách cân lại: viết ra. Mặt Trăng Xử Nữ dịu đi khi được sắp xếp, ghi chép, làm việc tỉ mỉ có mục đích.]] },
+{ t = "Bề ngoài: Bảo Bình mọc", body = [[Thiên Vương, Hải Vương ở nhà 1: người ta thấy bạn độc lập, có gu riêng, đôi khi xa cách hoặc "ở trên mây". Sao Kim và Sao Hỏa vuông góc với Cung Mọc: sức hút mạnh, nhưng tạo cảm giác khó gần lúc đầu.
+
+Thần số: Nhân cách 9 (rộng lượng, lý tưởng) và Thái độ 3 (vui, nói nhiều) làm mềm hình ảnh đó: lần đầu gặp thì vui vẻ, nhưng càng gần càng thấy bạn có một vùng riêng không cho ai vào.]] },
+{ t = "Đường đời 7 với hai số 11", body = [[Số 7 cần im lặng, chiêm nghiệm, tìm câu trả lời một mình. Số 11 cần được nói ra, chia sẻ, truyền cảm hứng. Đây là cặp mâu thuẫn trung tâm của bạn: muốn ở một mình để hiểu, rồi muốn ra sân khấu để nói.
+
+Trong thần số học, đây không phải lỗi mà là nhịp: thu vào, rồi phát ra. Khi bỏ mất nhịp thu vào, bạn nói nhiều mà rỗng; khi bỏ mất nhịp phát ra, bạn hiểu nhiều mà cô độc.]] },
+}},
+{ tab = "TIỀN · NGHIỆP", items = {
+{ t = "Sự nghiệp là trung tâm (Mặt Trời nhà 10)", body = [[Mặt Trời ở nhà 10, Thiên Đỉnh (MC) ở Bọ Cạp: bạn cần một sự nghiệp có danh, có chiều sâu; làm việc vô danh lâu sẽ thấy mất mình. Bọ Cạp ở MC hợp với nghề nghiên cứu, phân tích, đào sâu, xử lý chuyện người khác né tránh, quyền lực ở hậu trường.
+
+MC lục hợp Mặt Trăng: công việc liên quan con người, cảm xúc công chúng (nội dung, truyền thông) là đất tốt. MC vuông góc Mộc Tinh và Hải Vương: dễ kỳ vọng quá cao hoặc mơ hồ về hướng đi; cần mục tiêu đo được.]] },
+{ t = "Tay nghề: Thổ Tinh nghịch hành ở nhà 5", body = [[Thổ Tinh ở Song Tử, nhà 5, tam hợp Sao Kim, Sao Hỏa và Thiên Vương: khả năng sáng tạo có kỷ luật, đặc biệt với chữ và ý tưởng. Bạn hợp với nghề làm ra sản phẩm sáng tạo có cấu trúc: viết, biên tập, dựng nội dung, thiết kế thông tin.
+
+Nghịch hành: thường tự tin về tài sáng tạo muộn, hay nghi ngờ khả năng của mình lúc trẻ.]] },
+{ t = "Tiền bạc", body = [[Nhà 2 bắt đầu ở Song Ngư, chủ tinh Hải Vương nằm ở nhà 1, Mộc Tinh đồng chủ ở nhà 7. Tiền đến qua hình ảnh cá nhân, ý tưởng, và qua đối tác, khách hàng. Mặt trái: Hải Vương làm tiền khó nắm, dễ chi theo cảm hứng, dễ tin người.
+
+Thần số: ngày sinh 1 và chu kỳ thứ hai (30–56 tuổi) mang số 1, rất hợp tự làm chủ hoặc làm dự án riêng từ khoảng 30 tuổi. Đỉnh cao thứ ba (39–47 tuổi) là số 8: số của tiền bạc và quản lý, khớp với đại vận tài sản 32–41 bên tử vi.]] },
+}},
+{ tab = "TÌNH CẢM", items = {
+{ t = "Sao Kim Bọ Cạp trùng Sao Hỏa", body = [[Sao Kim ở Bọ Cạp (0°58') trùng Sao Hỏa ở Thiên Bình, cùng nhà 9: yêu mãnh liệt, sâu, muốn gắn bó toàn phần; dễ ghen, khó tha thứ khi bị phản bội. Hay bị hút bởi người khác văn hóa, khác nền tảng, hoặc gặp qua học hành, du lịch, mạng.
+
+Sao Kim vuông góc Cung Mọc và Hải Vương: tình cảm dễ lý tưởng hóa người kia rồi vỡ mộng. Sao Kim tam hợp Thổ Tinh: khi đã cam kết thì nghiêm túc, bền.]] },
+{ t = "Mộc Tinh ở nhà 7", body = [[Mộc Tinh Sư Tử ở nhà 7 (nhà của hôn nhân, đối tác): người bạn đời rộng lượng, nổi bật, mang lại may mắn và mở rộng thế giới của bạn. Đây là điểm sáng.
+
+Mộc Tinh đối đỉnh Thiên Vương và Hải Vương ở nhà 1: giằng co giữa nhu cầu tự do của bạn và nhu cầu gắn kết. Bạn cần một người cho bạn khoảng riêng.
+
+Tử vi cũng nói tương tự: Phu thê thời trẻ trắc trở, nhưng tam hợp có Lộc, người bạn đời về lâu dài mang phúc.]] },
+{ t = "Theo thần số", body = [[Linh hồn 11: điều bạn thật sự cần trong tình yêu là kết nối tinh thần, được hiểu, không phải chỉ vui vẻ. Đường đời 7: cần thời gian riêng ngay cả khi đang yêu.
+
+Chu kỳ đầu đời (đến 29 tuổi) mang số 11/2: nhạy cảm, dễ tổn thương, muốn gắn bó. Từ 30 tuổi chuyển sang số 1: độc lập hơn; báo cáo cũng lưu ý giai đoạn này dễ căng thẳng với bạn đời nếu không hiểu rõ nhu cầu của mình.]] },
+}},
+{ tab = "BÀI HỌC", items = {
+{ t = "Nút Bắc Song Tử nhà 4", body = [[Nút Nam ở Nhân Mã nhà 10 (cái quen): rao giảng, có câu trả lời sẵn, sống vì hình ảnh bên ngoài. Nút Bắc ở Song Tử nhà 4 (hướng cần đi): hỏi nhiều hơn, nghe nhiều hơn, chấp nhận nhiều góc nhìn; xây gốc rễ, nhà, gia đình.
+
+Nút Bắc tam hợp Hải Vương: trực giác giúp bạn đi đúng hướng này. Nút vuông góc Mặt Trăng: phải học cách chăm sóc cảm xúc của chính mình.]] },
+{ t = "Nợ nghiệp 16 và bài học số 7", body = [[Nợ nghiệp 16 trong thần số học nói về cái tôi: những gì dựng trên kiêu hãnh sẽ bị đổ để xây lại trên nền thật hơn. Đi cùng Đường đời 7, bài học là khiêm tốn trí tuệ: hiểu nhiều không có nghĩa là đúng.
+
+Tên của bạn thiếu số 7, trùng với Đường đời 7: bạn sinh ra để học sự chiêm nghiệm, nhưng bản năng (tên gọi) lại thiên về hành động, thể hiện. Phải chủ động tập: đọc sâu, thiền, đi bộ một mình.]] },
+{ t = "Chiron Ma Kết nhà 12 và các thử thách", body = [[Chiron ở Ma Kết nhà 12: vết thương kín về thành tựu và sự công nhận, cảm giác phải chứng minh mình đủ giỏi. Đây cũng là chỗ bạn hiểu và giúp được người khác nhiều nhất.
+
+Thử thách thần số: đầu đời là số 1 (dám đứng riêng mà không cứng đầu), giữa đời là số 3 (nói ít mà chất, đừng phân tán), về sau là số 2 (kiên nhẫn, hợp tác).]] },
+}},
+{ tab = "CHU KỲ", items = {
+{ t = "Các mốc lớn của đời", body = [[• Đến 29 tuổi (2031): Đỉnh cao 3, chu kỳ 11/2. Giai đoạn học, thể hiện, sáng tạo; cảm xúc nhạy.
+• Khoảng giữa 2032 (gần 30 tuổi): Thổ Tinh trở về vị trí gốc, tức "lần trưởng thành thứ nhất". Đồng thời thần số đổi chu kỳ (sang số 1) và đổi đỉnh cao (sang số 5).
+• 30–38 tuổi: Đỉnh cao 5 (thay đổi, tự do, đi lại).
+• 39–47 tuổi: Đỉnh cao 8 (tiền, quyền, quản lý).
+• Từ 48 tuổi: Đỉnh cao 6 (gia đình, trách nhiệm); từ 57 tuổi chu kỳ số 4 (bền bỉ, làm việc lâu).
+
+Khớp tử vi: cung Thân phát sau 30; đại vận đổi từ Phúc đức sang Điền trạch năm 32 tuổi (2033). Cả ba hệ thống cùng chỉ khoảng 2031–2033 là bước ngoặt lớn nhất trước 40.]] },
+}},
+{ tab = "2026 · 2027", items = {
+{ t = "Cuối 2026 (đến hết tháng 1/2027)", body = [[Năm cá nhân 2026: số 22/4 (Master xây dựng): năm đặt nền, làm việc nặng, kỷ luật, kết quả chưa thấy ngay.
+
+Chuyển động sao chính (tôi tự tính bằng quỹ đạo gần đúng, sai số dưới 1°):
+• Thổ Tinh vuông góc Chiron (11/2026–1/2027): cảm giác "chưa đủ giỏi" trỗi dậy; dễ tự ép mình.
+• Thổ Tinh lục hợp Hải Vương và Nút Bắc: kỷ luật giúp ước mơ thành hình; hợp lập kế hoạch dài hạn.
+• Mộc Tinh đối đỉnh Thiên Vương gốc: muốn bứt ra, đổi mới đột ngột; cẩn thận quyết định bốc đồng.
+
+Khớp tử vi: phần cuối năm Bính Ngọ là năm tuổi, Kình Dương vào Mệnh. Cả hai hệ cùng khuyên: chậm lại, đừng phản ứng nóng.]] },
+{ t = "2027 · năm cá nhân 5", body = [[Số 5: năm thay đổi, đi lại, tự do, cơ hội mới.
+
+• Mộc Tinh trở về vị trí gốc ở nhà 7 (3–5/2027), cùng lúc tam hợp Diêm Vương và được Thổ Tinh tam hợp: đầu năm (âm) là quãng đẹp nhất cho tình cảm, hợp tác, ký kết, gặp người quan trọng.
+• Hải Vương tam hợp Mặt Trời (3–11/2027) và Diêm Vương lục hợp Mặt Trời (cả năm): cảm hứng sáng tạo cao, sức ảnh hưởng tăng; hợp làm sản phẩm mang tên mình.
+• Thiên Vương đối đỉnh Mặt Trời (4–6/2027, lặp lại cuối năm): thay đổi đột ngột về công việc hoặc hình ảnh bản thân.
+• Thiên Vương trùng Nút Bắc nhà 4 (6–12/2027): đổi chỗ ở, chuyện nhà cửa, gia đình.
+• Thổ Tinh đối đỉnh Sao Hỏa (6–9/2027): giữa năm dễ bực bội, bị chặn, xung đột. Đây là quãng cần giữ bình tĩnh nhất.
+
+Khớp tử vi 2027: Thái Âm Hóa Lộc vào Phu thê/Thân (tình cảm lên), Cự Môn Hóa Kỵ vào Mệnh (lời nói gây chuyện), Thiên Mã (đi lại). Ba hệ thống trùng nhau rất rõ.]] },
+{ t = "Gợi ý theo quý cho 2027", body = [[• Quý 1: chuẩn bị, chốt kế hoạch.
+• Quý 2 (tháng 3–5 dương lịch): thời điểm mạnh nhất cho tình cảm, hợp tác, ra mắt dự án.
+• Quý 3: chậm lại, tránh tranh cãi và cam kết khi đang bực (Thổ Tinh đối Sao Hỏa, Cự Môn Hóa Kỵ).
+• Quý 4: chuyện nhà cửa, gia đình, có thể chuyển chỗ ở.]] },
+}},
+{ tab = "ĐỐI CHIẾU", items = {
+{ t = "Chỗ cả ba hệ thống trùng nhau", body = [[• Lời nói, tư duy sắc: Cự Môn vượng ở Mệnh · Sao Thủy trùng Diêm Vương · Sứ mệnh 11.
+• Nóng, dễ va chạm: Hỏa Tinh, Thiên Hình, Kình Dương chiếu Mệnh · Sao Hỏa vuông góc Cung Mọc · Thái độ 3, thử thách số 3.
+• Nội tâm nhạy, tự phê: Thái Âm hãm ở Thân · Mặt Trăng Xử Nữ bị vuông góc nhiều · Đường đời 7, Linh hồn 11.
+• Khác người: Địa Không ở Mệnh · Bảo Bình mọc, Thiên Vương, Hải Vương nhà 1.
+• Con cái muộn: Triệt ở Tử tức · Thổ Tinh ở nhà 5.
+• Người bạn đời mang phúc dù tình duyên trẻ trắc trở: tam hợp Lộc của Phu thê · Mộc Tinh nhà 7.
+• Bước ngoặt 2031–2033: Thân phát sau 30, đại vận đổi năm 32 · Thổ Tinh trở về · đổi chu kỳ và đỉnh cao thần số.
+• 2027 tình cảm mở, lời nói rủi ro: Thái Âm Hóa Lộc, Cự Môn Hóa Kỵ · Mộc Tinh trở về nhà 7, Thổ Tinh đối Sao Hỏa · năm cá nhân 5.]] },
+{ t = "Chỗ các hệ thống nói khác nhau", body = [[Sự nghiệp: tử vi cho Quan lộc yếu nhất lá số (Thái Dương hãm), còn bản đồ sao đặt Mặt Trời ở nhà 10, tức sự nghiệp là trung tâm.
+
+Cách hiểu hợp lý: sự nghiệp là thứ quan trọng nhất với bạn (sao), nhưng đường đi tới đó chậm và nhiều va chạm (tử vi). MC vuông góc Mộc Tinh, Hải Vương cũng cho thấy kỳ vọng dễ vượt thực tế. Cả hai cùng gợi ý: thành tựu nghề nghiệp đến muộn, khoảng 40 tuổi trở đi (đại vận Quan lộc 42–51, đỉnh cao 8 từ 39 tuổi).]] },
+{ t = "Một lời khuyên chung", body = [[Ba hệ thống, một thông điệp: năng lực của bạn nằm ở cái đầu và cái miệng; rủi ro cũng nằm ở đó. Thu vào trước khi phát ra. Viết trước khi nói. Hỏi trước khi kết luận (đúng bài học Nút Bắc Song Tử).
+
+Tất cả chỉ là công cụ soi chiếu, không có kiểm chứng khoa học. Phần trùng nhau giữa các hệ thống đáng để bạn tự kiểm lại với trải nghiệm thật của mình.]] },
+}},
+}
+
+local SETS = {
+    { name = "TỬ VI", data = DATA, sub = "Nhâm Ngọ · Dương Nam · giờ Tị" },
+    { name = "SAO & SỐ", data = DATA2, sub = "28/11/2002 · 10:10 · Bắc Giang" },
+}
+
 local BODY_PX, TITLE_PX = 25, 30
 
 local TuVi = InputContainer:extend{
@@ -262,12 +393,13 @@ local TuVi = InputContainer:extend{
     covers_fullscreen = true,
     tab = 1,
     page = 1,
+    set = 1,
 }
 
 -- chia nội dung một tab thành các khối (tiêu đề + đoạn), rồi xếp vào trang 2 cột
 function TuVi:layout(cw, ch)
     local blocks = {}
-    for _, it in ipairs(DATA[self.tab].items) do
+    for _, it in ipairs(SETS[self.set].data[self.tab].items) do
         local paras = {}
         for p in (it.body .. "\n\n"):gmatch("(.-)\n\n") do
             if p:match("%S") then paras[#paras + 1] = p end
@@ -350,13 +482,14 @@ function TuVi:paintTo(bb, x, y)
     local ok, err = pcall(function()
         local mx = 36
         bb:paintRoundedRect(mx, 30, W - 2 * mx, 84, BLACK, 24)
-        txt(bb, "TỬ VI · " .. DATA[self.tab].tab, mx + 34, 42, 44, { bold = true, color = WHITE })
-        txt(bb, "Nhâm Ngọ · Dương Nam · giờ Tị", W - mx - 34, 56, 26, { right = true, color = WHITE })
+        local D = SETS[self.set].data
+        txt(bb, SETS[self.set].name .. " · " .. D[self.tab].tab, mx + 34, 42, 44, { bold = true, color = WHITE })
+        txt(bb, SETS[self.set].sub, W - mx - 34, 56, 26, { right = true, color = WHITE })
         -- thanh tab
         local ty, th, gap = 132, 62, 8
-        local n = #DATA
+        local n = #D
         local tw = math.floor((W - 2 * mx - (n - 1) * gap) / n)
-        for i, d in ipairs(DATA) do
+        for i, d in ipairs(D) do
             local tx = mx + (i - 1) * (tw + gap)
             if i == self.tab then
                 bb:paintRoundedRect(tx, ty, tw, th, BLACK, 20)
@@ -394,6 +527,11 @@ function TuVi:paintTo(bb, x, y)
             { "◀ TRANG TRƯỚC", function() self:flip(-1) end, false, 1.4 },
             { "TRANG " .. self.page .. " / " .. np, function() end, false, 1.1 },
             { "TRANG SAU ▶", function() self:flip(1) end, true, 1.4 },
+            { "⇄ " .. SETS[self.set % #SETS + 1].name, function()
+                self.set = self.set % #SETS + 1
+                self.tab, self.page, self.pages = 1, 1, nil
+                UIManager:setDirty(self, "full")
+            end, true, 1.3 },
             { "THOÁT", function() self:close() end, false, 1 },
         }
         local bh, bgap = 84, 16
@@ -426,7 +564,7 @@ function TuVi:flip(d)
     if p < 1 then
         if self.tab > 1 then self.tab = self.tab - 1; self.pages = nil; self.page = 99 else return end
     elseif p > np then
-        if self.tab < #DATA then self.tab = self.tab + 1; self.pages = nil; self.page = 1 else return end
+        if self.tab < #SETS[self.set].data then self.tab = self.tab + 1; self.pages = nil; self.page = 1 else return end
     else
         self.page = p
     end
