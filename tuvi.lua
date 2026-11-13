@@ -381,9 +381,126 @@ Tất cả chỉ là công cụ soi chiếu, không có kiểm chứng khoa họ
 }},
 }
 
+-- ===== Human Design (dữ liệu từ biểu đồ MyHumanDesign, đã đối chiếu lại cổng Mặt Trời/Mặt Trăng/Sao Thủy/Diêm Vương) =====
+local DATA3 = {
+{ tab = "TỔNG QUAN", items = {
+{ t = "Bạn trong Human Design", body = [[• Loại: Manifesting Generator (người tạo dựng đa năng).
+• Chiến lược: phản hồi (đợi điều gì đó đến rồi phản ứng, không tự lao vào khởi xướng).
+• Quyền quyết định: Cảm xúc (Solar Plexus), tức không có sự thật ở khoảnh khắc này, phải chờ cảm xúc lắng.
+• Hồ sơ: 6/3 (Người mẫu hình / Người thử sai).
+• Thập giá sống: Left Angle Cross of Duality (34/20 | 40/37), Thập giá Lưỡng Cực.
+• Định nghĩa: tách đôi (Split).
+• Dấu hiệu đúng đường: hài lòng. Dấu hiệu lệch: bực bội (frustration).]] },
+{ t = "Một câu tóm gọn", body = [[Một động cơ mạnh, nói được và dẫn được người khác, nhưng chỉ đúng khi đi theo nhịp: phản hồi trước, chờ cảm xúc lắng, rồi mới hành động.
+
+Hầu hết rắc rối trong biểu đồ này không đến từ thiếu năng lượng, mà từ việc quyết định khi cảm xúc đang ở đỉnh hoặc đáy. Đây cũng chính là điều tử vi (Hỏa Tinh, Thái Tuế ở Mệnh) và bản đồ sao (Sao Hỏa vuông góc Cung Mọc) đã nói theo cách khác.]] },
+{ t = "Bốn trung tâm có định nghĩa", body = [[• Sacral (năng lượng sống, làm việc): có. Bạn có sức bền lớn khi làm đúng việc mình thích.
+• Throat (cổ họng, lời nói, hành động): có, nối với Sacral (kênh 34-20) và với G (kênh 7-31). Lời nói và hành động của bạn có sức nặng.
+• G (bản sắc, hướng đi): có. Bạn có cảm nhận ổn định về mình là ai.
+• Heart (ý chí, giá trị bản thân) và Solar Plexus (cảm xúc): có, nối với nhau qua kênh 37-40.
+
+Mở (không định nghĩa): Head, Ajna, Spleen, Root. Đây là những chỗ bạn hấp thụ áp lực từ người khác (xem tab TRUNG TÂM).]] },
+}},
+{ tab = "LOẠI HÌNH", items = {
+{ t = "Manifesting Generator", body = [[Sacral có định nghĩa và nối thẳng lên cổ họng (kênh 34-20): bạn vừa có sức bền của Generator, vừa có tốc độ biến thành hành động như Manifestor. Làm nhiều việc cùng lúc, nhảy bước, bỏ qua bước thừa là bình thường với bạn, không phải lỗi.
+
+Điều kiện: năng lượng này chỉ bền khi bạn làm việc mình thật sự hứng thú. Làm việc mình ghét thì kiệt nhanh, rồi sinh bực bội.]] },
+{ t = "Chiến lược: phản hồi", body = [[Thay vì nghĩ ra rồi lao vào, bạn để cuộc sống đưa ra thứ gì đó (một lời mời, một đề nghị, một vấn đề trước mắt), rồi nghe phản ứng từ bụng: "ừ" hay "ừm-ừm".
+
+Với bạn có thêm một bước: vì quyền quyết định là cảm xúc, tiếng "ừ" đầu tiên chưa phải đáp án cuối. Ghi nó lại, ngủ một đêm (hoặc vài ngày với chuyện lớn), rồi xem nó còn nguyên không.]] },
+{ t = "Bực bội là đèn cảnh báo", body = [[Theme lệch của Manifesting Generator là bực bội. Khi bạn thấy mình bực vì "làm mãi không ra gì", đó thường là dấu hiệu bạn đang: làm việc mình không thật sự muốn, hoặc lao vào trước khi có thứ để phản hồi, hoặc quyết định khi chưa qua sóng cảm xúc.
+
+Khớp tử vi: Quan lộc Thái Dương hãm (làm nhiều, ít được ghi nhận). Hai hệ cùng chỉ một cảm giác quen thuộc với bạn trong công việc.]] },
+}},
+{ tab = "QUYẾT ĐỊNH", items = {
+{ t = "Quyền quyết định cảm xúc", body = [[Theo tài liệu của Jovian Archive (tổ chức gốc của Human Design), lời khuyên cho người có quyền quyết định cảm xúc là: chậm lại, đợi rõ ràng, và quan sát chuyện gì xảy ra khi không để áp lực của khoảnh khắc chọn thay mình.
+
+Cảm xúc của bạn chạy theo sóng: lên, xuống, rồi lắng. Quyết định ở đỉnh sóng thì quá hứng, ở đáy sóng thì quá bi quan. Rõ ràng thật sự có cảm giác bình thản, không gấp.]] },
+{ t = "Áp dụng thực tế", body = [[• Việc nhỏ (ăn gì, đi đâu): theo phản hồi của bụng là đủ.
+• Việc vừa (nhận dự án, mua món vài triệu): ngủ một đêm.
+• Việc lớn (đổi việc, chuyển nhà, yêu, đầu tư): cho nó vài ngày đến vài tuần, hỏi lại mình ở nhiều tâm trạng khác nhau.
+• Khi ai đó ép "trả lời ngay": cứ nói "để mình nghĩ thêm". Đó là cách vận hành đúng của bạn, không phải chần chừ.
+
+Lưu ý ngược lại: chờ không có nghĩa là ngồi im. Bạn vẫn hành động, thử, trải nghiệm; chỉ là đừng cam kết lớn khi đang nóng.]] },
+{ t = "Bốn hệ thống, một lời khuyên", body = [[• Human Design: quyền quyết định cảm xúc, không có sự thật ở khoảnh khắc này.
+• Tử vi: Hỏa Tinh, Thiên Hình, Thái Tuế ở Mệnh, Kình Dương chiếu; năm 2027 Cự Môn Hóa Kỵ vào Mệnh.
+• Bản đồ sao: Sao Hỏa vuông góc Cung Mọc; Mặt Trăng vuông góc Mặt Trời, Sao Thủy.
+• Thần số: Thái độ 3, thử thách số 3, phản ứng đầu là nói.
+
+Đây là điểm trùng mạnh nhất trong cả bốn hệ. Nếu chỉ nhớ một điều: đừng quyết, đừng nói điều quan trọng khi đang nóng.]] },
+}},
+{ tab = "HỒ SƠ 6/3", items = {
+{ t = "Người mẫu hình / Người thử sai", body = [[Hồ sơ 6/3 kết hợp đường 6 ý thức (người mẫu hình) với đường 3 vô thức (người thử sai). Theo Jovian Archive, đường 6 đi qua ba giai đoạn:
+• Từ lúc sinh đến khoảng 30 tuổi: thử sai, sống như một đường 3.
+• Khoảng 30 đến 50 tuổi: "lên mái nhà", lùi lại quan sát, chữa lành, có góc nhìn.
+• Từ khoảng 50 tuổi (lần Chiron trở về): "xuống mái nhà", sống như một người mẫu hình thật sự.]] },
+{ t = "Riêng với 6/3", body = [[Jovian Archive mô tả: đường 3 vô thức tiếp tục kéo 6/3 vào trải nghiệm mới ngay cả trong những năm "trên mái nhà"; các mối quan hệ có thể kết thúc bất ngờ, kế hoạch có thể tan. Cảm giác bồn chồn, nhưng cũng cho 6/3 hiểu biết rất sâu từ trải nghiệm.
+
+Với bạn hiện nay (24 tuổi): đang ở giai đoạn thử sai. Va vấp, đổi hướng, mối quan hệ đến rồi đi là "chương trình học", không phải thất bại.]] },
+{ t = "Ba mốc khớp với các hệ khác", body = [[• Khoảng 30 tuổi (2032): HD lên mái nhà · Thổ Tinh trở về (giữa 2032) · thần số đổi chu kỳ và đỉnh cao · tử vi đổi đại vận năm 32 tuổi.
+• 30 đến 50: giai đoạn quan sát, tích lũy · tử vi có đại vận tài sản 32–41 và đại vận sự nghiệp 42–51 (Thái Dương Hóa Lộc).
+• Khoảng 50 tuổi trở đi: HD xuống mái nhà, sống như người mẫu hình · tử vi đại vận 52–61 có Cự Môn Hóa Lộc vào Mệnh (lời nói, uy tín thành tài sản) · thần số trưởng thành 9 (cho đi, dẫn dắt).
+
+Cả bốn hệ đều vẽ cùng một đường: thành muộn, nhưng thành bằng chính trải nghiệm của mình.]] },
+}},
+{ tab = "KÊNH", items = {
+{ t = "Kênh 34-20 · Sức hút (Charisma)", body = [[Nối Sacral với Throat: suy nghĩ biến thành hành động ngay. Người có kênh này bận rộn, luôn làm gì đó, và sức hút đến từ việc thấy họ đang làm.
+
+Mặt trái: bận cho có, làm mà không phản hồi. Khi năng lượng 34 (sức mạnh) không đi qua phản hồi, nó thành ép buộc.
+
+Cổng 34 cũng là món quà quan trọng nhất trên biểu đồ của bạn (Gift 34). Trong hệ Gene Keys của Richard Rudd, Gift 34 là Sức Mạnh (Strength): sức mạnh tự nhiên, không cần chứng minh.]] },
+{ t = "Kênh 7-31 · Kênh Alpha (Lãnh đạo)", body = [[Nối G (cổng 7, vai trò của bản thân) với Throat (cổng 31, ảnh hưởng). Đây là kênh của người dẫn dắt bằng lời nói và tầm nhìn. Gate 7 mang năng lượng dẫn dắt bằng định hướng chứ không phải áp đặt; kênh Alpha nói về sự lãnh đạo được người khác công nhận.
+
+Hàm ý: bạn dẫn dắt tốt nhất khi được nhóm mời, được thừa nhận; tự xưng là lãnh đạo dễ gặp phản kháng.
+
+Khớp: Cự Môn (tử vi), Sao Thủy trùng Diêm Vương (sao), Sứ mệnh 11 (số).]] },
+{ t = "Kênh 37-40 · Cộng đồng", body = [[Nối Heart (cổng 40, ý chí, cho và nhận) với Solar Plexus (cổng 37, tình thân, gia đình). Kênh này nói về thỏa thuận: tôi làm việc cho nhóm, nhóm chăm sóc lại tôi. Nó cũng nói về cân bằng giữa làm và nghỉ.
+
+Hàm ý: bạn trung thành, giữ lời, nhưng cần thỏa thuận công bằng. Bị lợi dụng là thứ bạn khó tha thứ. Cổng 40 cũng cần thời gian ở một mình sau khi đã làm.
+
+Khớp: Thân cư Phu thê (tử vi), Mộc Tinh nhà 7, Nút Bắc nhà 4 (sao), chu kỳ đỉnh cao 6 về sau (số).]] },
+}},
+{ tab = "TRUNG TÂM", items = {
+{ t = "Định nghĩa tách đôi", body = [[Biểu đồ có hai nhóm không nối với nhau: (Sacral, Throat, G) và (Heart, Solar Plexus). Người có định nghĩa tách đôi thường cảm thấy "trọn" hơn khi ở cạnh người lấp được chỗ nối, và mất thời gian để tự thấy mình nhất quán.
+
+Các cổng có thể nối hai nhóm của bạn: 6 (với 59 của bạn), 22 (với 12) và 36 (với 35). Người có một trong các cổng này thường khiến bạn thấy rất hợp. Khớp với tử vi: Thân cư Phu thê, người bạn đời ảnh hưởng rất lớn.]] },
+{ t = "Bốn trung tâm mở", body = [[• Head và Ajna mở: đầu óc tiếp nhận nhiều ý tưởng, câu hỏi của người khác; dễ cố tìm sự chắc chắn bằng suy nghĩ. Suy nghĩ để hiểu thì tốt, để quyết thì không.
+• Spleen mở: dễ giữ lại những thứ (việc, người, thói quen) không còn tốt cho mình vì sợ mất.
+• Root mở: hấp thụ áp lực phải làm nhanh, làm xong; dễ vội.
+
+Khớp: Đường đời 7 và Mặt Trăng Xử Nữ (nghĩ nhiều, tự phân tích), Địa Không ở Mệnh (ý tưởng nhiều, kết thúc ít).]] },
+}},
+{ tab = "THẬP GIÁ", items = {
+{ t = "Left Angle Cross of Duality (34/20 | 40/37)", body = [[Thập giá sống mô tả "chủ đề" của cả đời. Thập giá góc trái (Left Angle) mang tính liên cá nhân: mục đích được hoàn thành qua quan hệ với người khác, không phải một mình.
+
+Bốn cổng tạo thập giá của bạn:
+• 34 (sức mạnh) và 20 (khoảnh khắc hiện tại): năng lượng hành động ngay, hiện diện.
+• 40 (ý chí, một mình) và 37 (tình thân, gia đình): thỏa thuận, cho và nhận, cộng đồng.
+
+Chủ đề "lưỡng cực": giằng co giữa tự lực và gắn bó, giữa làm cho mình và làm cho nhóm. Bạn trưởng thành bằng cách học giữ cả hai mà không bỏ cái nào.]] },
+{ t = "Khớp với các hệ khác", body = [[• Tử vi: Mệnh nhiều sát (tự lực), Thân cư Phu thê (gắn bó), Lộc nằm ở Phúc chứ không ở Mệnh (may mắn đến qua người khác).
+• Bản đồ sao: Mộc Tinh nhà 7 đối đỉnh Thiên Vương, Hải Vương nhà 1, đúng trục tự do đối gắn kết.
+• Thần số: Đường đời 7 (một mình) đi cùng hai số 11 (truyền cảm hứng cho người khác).
+
+Bốn hệ, cùng một trục: bạn là người một mình đi tìm, rồi mang về cho nhóm.]] },
+}},
+{ tab = "NGUỒN", items = {
+{ t = "Dữ liệu và nguồn tham khảo", body = [[Dữ liệu:
+• Tử vi: vị trí sao lấy từ lá số Tử Vi Cổ Học, tự kiểm lại bằng quy tắc an sao.
+• Bản đồ sao: Astrodienst (astro.com), Placidus; chuyển động sao 2026–2027 tự tính.
+• Thần số: tự tính lại từ tên TRẦN ĐỨC HOAN và ngày 28/11/2002, đối chiếu báo cáo tracuuthansohoc.
+• Human Design: biểu đồ MyHumanDesign; tôi kiểm lại cổng của Mặt Trời (34.6), Mặt Trăng (64.1), Sao Thủy (5.3), Diêm Vương (26.1) từ vị trí sao gốc.
+
+Diễn giải tham khảo: Jovian Archive (tổ chức của Ra Uru Hu, người lập ra Human Design), The Definitive Book of Human Design, Gene Keys (Richard Rudd); phần luận và đối chiếu là của Claude.
+
+Không hệ nào trong bốn hệ này có kiểm chứng khoa học. Dùng để soi lại mình, không dùng để quyết thay mình.]] },
+}},
+}
+
 local SETS = {
     { name = "TỬ VI", data = DATA, sub = "Nhâm Ngọ · Dương Nam · giờ Tị" },
     { name = "SAO & SỐ", data = DATA2, sub = "28/11/2002 · 10:10 · Bắc Giang" },
+    { name = "HUMAN DESIGN", data = DATA3, sub = "MG · 6/3 · cảm xúc" },
 }
 
 local BODY_PX, TITLE_PX = 25, 30
@@ -493,10 +610,10 @@ function TuVi:paintTo(bb, x, y)
             local tx = mx + (i - 1) * (tw + gap)
             if i == self.tab then
                 bb:paintRoundedRect(tx, ty, tw, th, BLACK, 20)
-                txt(bb, d.tab, tx + math.floor(tw / 2), ty + 17, 21, { center = true, bold = true, color = WHITE, max_width = tw - 10 })
+                txt(bb, d.tab, tx + math.floor(tw / 2), ty + 19, 19, { center = true, bold = true, color = WHITE, max_width = tw - 10 })
             else
                 bb:paintBorder(tx, ty, tw, th, 3, BLACK, 20)
-                txt(bb, d.tab, tx + math.floor(tw / 2), ty + 17, 21, { center = true, bold = true, max_width = tw - 10 })
+                txt(bb, d.tab, tx + math.floor(tw / 2), ty + 19, 19, { center = true, bold = true, max_width = tw - 10 })
             end
             self.hits[#self.hits + 1] = { x = tx, y = ty, w = tw, h = th, fn = function()
                 self.tab, self.page, self.pages = i, 1, nil
@@ -527,7 +644,7 @@ function TuVi:paintTo(bb, x, y)
             { "◀ TRANG TRƯỚC", function() self:flip(-1) end, false, 1.4 },
             { "TRANG " .. self.page .. " / " .. np, function() end, false, 1.1 },
             { "TRANG SAU ▶", function() self:flip(1) end, true, 1.4 },
-            { "⇄ " .. SETS[self.set % #SETS + 1].name, function()
+            { "⇄ " .. SETS[self.set % #SETS + 1].name:gsub("HUMAN DESIGN", "HD"), function()
                 self.set = self.set % #SETS + 1
                 self.tab, self.page, self.pages = 1, 1, nil
                 UIManager:setDirty(self, "full")
