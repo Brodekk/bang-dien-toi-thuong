@@ -1797,46 +1797,50 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-13 b7"
+local BUILD = "2026-11-13 b8"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
-local TAROT_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/tarot.lua"
 
--- tải tarot.lua (và cập nhật nếu có bản mới); trả về ok, thông báo, changed
-local function update_tarot()
-    local path = PLUGIN_DIR .. "/tarot.lua"
-    local tmp = "/mnt/us/vn_dash/update_tarot.lua"
+local RAW_BASE = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/"
+
+-- tải module phụ (tarot.lua, tuvi.lua…) và cập nhật nếu có bản mới; trả về ok, thông báo, changed
+local function update_mod(name, label)
+    local path = PLUGIN_DIR .. "/" .. name .. ".lua"
+    local tmp = "/mnt/us/vn_dash/update_" .. name .. ".lua"
     os.remove(tmp)
-    os.execute('curl -sS -m 40 --connect-timeout 10 -L -A "Mozilla/5.0" -o "' .. tmp .. '" "' .. TAROT_URL .. "?t=" .. os.time() .. '" 2>/dev/null')
+    os.execute('curl -sS -m 40 --connect-timeout 10 -L -A "Mozilla/5.0" -o "' .. tmp .. '" "' .. RAW_BASE .. name .. ".lua?t=" .. os.time() .. '" 2>/dev/null')
     local f = io.open(tmp, "rb")
-    if not f then return false, "Tarot: tải thất bại." end
+    if not f then return false, label .. ": tải thất bại." end
     local body = f:read("*a")
     f:close()
-    if #body < 5000 or not body:find("return M", 1, true) then return false, "Tarot: file tải về không hợp lệ." end
+    if #body < 5000 or not body:find("return M", 1, true) then return false, label .. ": file tải về không hợp lệ." end
     local fn, err = loadfile(tmp)
-    if not fn then return false, "Tarot: lỗi cú pháp " .. tostring(err):sub(1, 80) end
+    if not fn then return false, label .. ": lỗi cú pháp " .. tostring(err):sub(1, 80) end
     local cur = io.open(path, "rb")
     local old = cur and cur:read("*a")
     if cur then cur:close() end
-    if old == body then return true, "Tarot: đã là bản mới nhất.", false end
+    if old == body then return true, label .. ": đã là bản mới nhất.", false end
     local out = io.open(path, "wb")
-    if not out then return false, "Tarot: không ghi được file." end
+    if not out then return false, label .. ": không ghi được file." end
     out:write(body)
     out:close()
-    return true, "Tarot: đã cập nhật.", true
+    return true, label .. ": đã cập nhật.", true
 end
 
--- mở màn hình Tarot (nạp lười từ tarot.lua; tự tải nếu chưa có)
-local function open_tarot(on_close)
-    local path = PLUGIN_DIR .. "/tarot.lua"
+local function update_tarot() return update_mod("tarot", "Tarot") end
+local function update_tuvi() return update_mod("tuvi", "Tử vi") end
+
+-- mở màn hình module phụ (nạp lười; tự tải nếu chưa có)
+local function open_mod(name, label, on_close)
+    local path = PLUGIN_DIR .. "/" .. name .. ".lua"
     local function run()
         local ok, mod = pcall(dofile, path)
         if ok and type(mod) == "table" and mod.open then
             local ok2, err = pcall(mod.open, on_close)
-            if not ok2 then log("tarot open error: " .. tostring(err)) end
+            if not ok2 then log(name .. " open error: " .. tostring(err)) end
         else
-            log("tarot load error: " .. tostring(mod))
+            log(name .. " load error: " .. tostring(mod))
             local InfoMessage = require("ui/widget/infomessage")
-            UIManager:show(InfoMessage:new{ text = "Không mở được Tarot. Vào tab LỊCH, bấm CẬP NHẬT APP rồi thử lại.", timeout = 5 })
+            UIManager:show(InfoMessage:new{ text = "Không mở được " .. label .. ". Vào tab LỊCH, bấm CẬP NHẬT APP rồi thử lại.", timeout = 5 })
         end
     end
     local f = io.open(path, "rb")
@@ -1846,21 +1850,24 @@ local function open_tarot(on_close)
         return
     end
     local InfoMessage = require("ui/widget/infomessage")
-    local msg = InfoMessage:new{ text = "Đang tải Tarot lần đầu…" }
+    local msg = InfoMessage:new{ text = "Đang tải " .. label .. " lần đầu…" }
     UIManager:show(msg)
     UIManager:scheduleIn(0.4, function()
         local NetworkMgr = require("ui/network/manager")
         NetworkMgr:runWhenOnline(function()
-            local okd, rok = pcall(update_tarot)
+            local okd, rok = pcall(update_mod, name, label)
             UIManager:close(msg)
             if okd and rok then
                 run()
             else
-                UIManager:show(InfoMessage:new{ text = "Không tải được Tarot, kiểm tra Wi-Fi.", timeout = 4 })
+                UIManager:show(InfoMessage:new{ text = "Không tải được " .. label .. ", kiểm tra Wi-Fi.", timeout = 4 })
             end
         end)
     end)
 end
+
+local function open_tarot(on_close) open_mod("tarot", "Tarot", on_close) end
+local function open_tuvi(on_close) open_mod("tuvi", "Tử vi", on_close) end
 
 local function self_update()
     local src = debug.getinfo(1, "S").source or ""
@@ -1905,6 +1912,7 @@ function VNDash:doUpdate()
         NetworkMgr:runWhenOnline(function()
             local ok, r1, r2, r3 = pcall(self_update)
             local okt, t1, t2 = pcall(update_tarot)
+            local okv, v1, v2 = pcall(update_tuvi)
             it.loading = false
             local secs = {}
             if not ok then
@@ -1913,6 +1921,7 @@ function VNDash:doUpdate()
                 secs[1] = { "Ứng dụng", r2 or "" }
             end
             secs[2] = { "Tarot", okt and (t2 or "") or ("Lỗi: " .. tostring(t1):sub(1, 100)) }
+            secs[3] = { "Tử vi", okv and (v2 or "") or ("Lỗi: " .. tostring(v1):sub(1, 100)) }
             it.sections = secs
             UIManager:setDirty(self, "full")
             if ok and r1 and r3 then
@@ -1930,6 +1939,10 @@ end
 
 function VNDash:openTarot()
     open_tarot()
+end
+
+function VNDash:openTuVi()
+    open_tuvi()
 end
 
 function VNDash:openProfile()
@@ -2267,6 +2280,7 @@ function VNDash:buttonList()
     elseif self.tab == "calendar" then
         return {
             { "BỐC TAROT", function() self:openTarot() end, true, 1.3 },
+            { "TỬ VI", function() self:openTuVi() end, true, 1 },
             { "CẬP NHẬT APP", function() self:doUpdate() end, false, 1.3 },
             { "LÀM MỚI", function() UIManager:setDirty(self, "full") end, true, 1 },
         }
@@ -3715,6 +3729,13 @@ function VNMarket:addToMainMenu(menu_items)
         sorting_hint = "tools",
         callback = function()
             self:onShowTarot()
+        end,
+    }
+    menu_items.vnmarket_tuvi = {
+        text = "Tử vi của tôi",
+        sorting_hint = "tools",
+        callback = function()
+            open_tuvi()
         end,
     }
     menu_items.vnmarket_auto = {
