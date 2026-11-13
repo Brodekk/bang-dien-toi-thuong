@@ -293,17 +293,18 @@ local function img_url(i)
 end
 
 -- tải song song các ảnh còn thiếu; trả về true nếu tải được ít nhất 1 ảnh
-local function fetch_imgs(list)
-    local cmds = {}
+local UA = "VNDashKindle/1.0 (KOReader tarot plugin; personal use)"
+
+local function fetch_once(list)
+    local args = {}
     for _, i in ipairs(list) do
         if not have_img(i) then
-            cmds[#cmds + 1] = string.format('curl -sS -m 30 --connect-timeout 8 -L -A "Mozilla/5.0" -o "%s.part" "%s" 2>/dev/null &', img_file(i), img_url(i))
+            args[#args + 1] = string.format('-o "%s.part" "%s"', img_file(i), img_url(i))
         end
     end
-    if #cmds == 0 then return true end
+    if #args == 0 then return end
     os.execute('mkdir -p "' .. IMGDIR .. '"')
-    os.execute(table.concat(cmds, " ") .. " wait")
-    local got = false
+    os.execute('curl -sS -f -L --retry 3 --retry-delay 2 -m 25 --connect-timeout 8 -A "' .. UA .. '" ' .. table.concat(args, " ") .. ' 2>/dev/null')
     for _, i in ipairs(list) do
         local tmp = img_file(i) .. ".part"
         local f = io.open(tmp, "rb")
@@ -313,13 +314,28 @@ local function fetch_imgs(list)
             f:close()
             if head == "\255\216\255" and sz and sz > 4000 then
                 os.rename(tmp, img_file(i))
-                got = true
             else
                 os.remove(tmp)
             end
         end
     end
-    return got
+end
+
+-- tải lần lượt (không song song để khỏi bị Wikimedia chặn), thử lại tối đa 3 lượt
+local function fetch_imgs(list)
+    for pass = 1, 3 do
+        local miss = false
+        for _, i in ipairs(list) do
+            if not have_img(i) then miss = true end
+        end
+        if not miss then return true end
+        if pass > 1 then os.execute("sleep 2") end
+        fetch_once(list)
+    end
+    for _, i in ipairs(list) do
+        if not have_img(i) then return false end
+    end
+    return true
 end
 
 local img_cache = {}
@@ -796,10 +812,10 @@ function Tarot:draw_cross(bb, top, bottom, W, mx)
     local x2, y2 = cxc - math.floor(L / 2), rowB + math.floor((ah - aw) / 2)
     draw_card(bb, x2, y2, L, aw, D[2].card, D[2].rev, true)
     pos[2] = { x2, y2 }
-    -- cột bên phải: 7 (dưới) -> 10 (trên)
+    -- cột cây gậy ngay cạnh hình chữ thập: 7 (dưới) -> 10 (trên)
     local sh = math.floor((bottom - top - 3 * gap) / 4)
     local sw = math.floor(sh * 0.578)
-    local sx = W - mx - sw
+    local sx = cxc + math.floor(L / 2) + gap + aw + 40
     for k = 0, 3 do
         local i = 7 + k
         local yy = bottom - sh - k * (sh + gap)
@@ -813,14 +829,14 @@ function Tarot:draw_cross(bb, top, bottom, W, mx)
         txt(bb, tostring(i), p[1] + 18, p[2] + 6, 19, { center = true, bold = true, color = WHITE })
     end
     -- chú giải ở giữa
-    local lx = cxc + math.floor(L / 2) + gap + aw + 36
-    local lw = sx - 30 - lx
-    local lh = 38
+    local lx = sx + sw + 50
+    local lw = W - mx - lx
+    local lh = 44
     local ly = top + math.floor(((bottom - top) - 10 * lh) / 2)
     for i = 1, 10 do
         local d = D[i]
         local line = i .. "  " .. lay.labels[i] .. ":  " .. d.card.en .. (self.deal_rev and (d.rev and "  (ngược)" or "") or "")
-        txt(bb, line, lx, ly + (i - 1) * lh, 23, { bold = (i == 1 or i == 10), max_width = lw })
+        txt(bb, line, lx, ly + (i - 1) * lh, 24, { bold = (i == 1 or i == 10), max_width = lw })
     end
 end
 
@@ -1069,11 +1085,6 @@ function Tarot:paintTo(bb, x, y)
         else
             self:draw_many(bb, top, bottom, W, mx)
         end
-        if showing_cards and self.img_missing then
-            local note = "Chưa có ảnh bài – chạm vào đây để tải lại (giữ nguyên bài đã bốc)"
-            local nw = txt(bb, note, W - mx, bottom + 2, 22, { right = true, color = BLACK, bold = true })
-            self.hits[#self.hits + 1] = { x = W - mx - nw - 20, y = bottom - 14, w = nw + 40, h = 32, fn = function() self:retry_imgs() end }
-        end
         -- nút
         local list = {
             { "BỐC BÀI", function() self:deal_n(self:cur_layout().n) end, true, 1.2 },
@@ -1099,6 +1110,9 @@ function Tarot:paintTo(bb, x, y)
             end, false, 1.4 },
             { "THOÁT", function() self:close() end, false, 1 },
         }
+        if showing_cards and self.img_missing then
+            table.insert(list, 2, { "TẢI ẢNH", function() self:retry_imgs() end, true, 1.2 })
+        end
         local bh, gap = 84, 8
         local by = H - 30 - bh - 22
         local totw = 0
