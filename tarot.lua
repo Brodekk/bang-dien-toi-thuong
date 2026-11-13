@@ -406,47 +406,77 @@ local function score_of(d)
     return p
 end
 
-local function lens_of(c, topic)
-    if not topic then return "" end
-    local t = TOPICS[topic]
-    if c.kind == "major" then
-        return " Đây là lá Ẩn Chính nên nó chi phối cả bức tranh " .. t.name .. " của bạn."
-    end
-    if t.suits[c.suit] then
-        return " Lá thuộc bộ " .. SUITS[c.suit][1] .. " – đúng lĩnh vực " .. t.name .. ", nên đây là thông điệp trực tiếp cho câu hỏi."
-    end
-    return " Bộ " .. SUITS[c.suit][1] .. " nói về " .. SUITS[c.suit][4] .. ": hãy nhìn " .. t.name .. " của bạn qua lăng kính đó."
+local SPREADS = {
+    { "QUÁ KHỨ", "HIỆN TẠI", "TƯƠNG LAI" },
+    { "TÌNH HUỐNG", "THỬ THÁCH", "LỜI KHUYÊN" },
+    { "BẠN", "NGƯỜI KIA / HOÀN CẢNH", "KẾT QUẢ" },
+    { "NGUYÊN NHÂN", "HIỆN TRẠNG", "KẾT QUẢ" },
+}
+local ROLES = {
+    { "nền móng đã dẫn tới hiện tại", "điều đang diễn ra ngay lúc này", "hướng đi sắp tới nếu mọi thứ giữ nguyên" },
+    { "bức tranh hiện giờ", "điều đang cản trở hoặc thử thách bạn", "hướng xử lý mà bài gợi ý" },
+    { "phần của bạn trong chuyện này", "phía còn lại: người kia hoặc hoàn cảnh", "nơi mọi thứ có thể dẫn tới" },
+    { "gốc rễ của vấn đề", "trạng thái hiện tại", "kết quả nếu cứ tiếp tục như vậy" },
+}
+
+-- chọn kiểu trải bài: tự động theo câu hỏi nếu chưa chọn tay
+local function spread_of(sel, question)
+    if sel and sel > 0 then return sel end
+    local q = tostring(question or "")
+    if q == "" then return 1 end
+    local t = detect_topic(q)
+    if t == "love" then return 3 end
+    if t or is_yesno(q) then return 2 end
+    return 1
 end
 
-local function compose_reading(draws, question, deal_rev)
+local function tone_of(d, tname)
+    local p = d.card.pol or 0
+    local t = tname or "câu chuyện của bạn"
+    if d.rev then
+        if p > 0 then return "dấu hiệu tốt nhưng đang bị chậm hoặc chặn lại" end
+        if p < 0 then return "điều khó đang dịu bớt, bạn có cơ hội gỡ" end
+        return "năng lượng đang lệch, nên xem lại cách mình đang làm"
+    end
+    if p > 0 then return "tín hiệu thuận cho " .. t end
+    if p < 0 then return "điểm cần dè chừng trong " .. t end
+    return "chưa tốt hay xấu, tùy cách bạn chọn trong " .. t
+end
+
+local function compose_reading(draws, question, spread)
     local q = tostring(question or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local topic = (q ~= "") and detect_topic(q) or nil
+    local tname = topic and TOPICS[topic].name or nil
+    local n = #draws
+    local sp = spread_of(spread, q)
     local paras = {}
-    local labels = #draws == 3 and { "QUÁ KHỨ", "HIỆN TẠI", "TƯƠNG LAI" } or { "LÁ BÀI" }
     local total = 0
     for i, d in ipairs(draws) do
         local c = d.card
-        local s = labels[i] .. " – " .. c.name .. (d.rev and " (ngược)" or "") .. ": " ..
-            (d.rev and c.rev or c.up) .. lens_of(c, topic)
+        local label, role
+        if n == 3 then label, role = SPREADS[sp][i], ROLES[sp][i]
+        else label, role = "LÁ BÀI", "thông điệp chính cho câu hỏi của bạn" end
+        local s = label .. " · " .. c.name .. (d.rev and " (ngược)" or "") .. "\n" ..
+            (d.rev and c.rev or c.up) .. " Ở vị trí này, lá là " .. role .. ": " .. tone_of(d, tname) .. "."
+        if c.kind == "major" then s = s .. " Là lá Ẩn Chính nên sức nặng lớn hơn các lá thường." end
         paras[#paras + 1] = s
         total = total + score_of(d)
     end
-    local n = #draws
     if n == 3 then
         local diff = score_of(draws[3]) - score_of(draws[1])
         local t
-        if diff > 0.5 then t = "Mạch chuyện đang đi lên: từ nặng nề dần sang thuận lợi."
-        elseif diff < -0.5 then t = "Mạch chuyện đang đi xuống: cần thận trọng ở chặng sắp tới."
-        else t = "Mạch chuyện khá ổn định, không đổi chiều đột ngột." end
-        paras[#paras + 1] = "TỔNG QUAN – " .. t
+        if diff > 0.5 then t = "mạch chuyện đi lên, từ nặng nề dần sang thuận lợi."
+        elseif diff < -0.5 then t = "mạch chuyện đi xuống, chặng sắp tới cần thận trọng."
+        else t = "mạch chuyện khá ổn định, không đổi chiều đột ngột." end
+        paras[#paras + 1] = "TỔNG QUAN · Nhìn cả ba lá, " .. t
     end
     if q ~= "" and is_yesno(q) then
         local thr = (n == 1) and 1 or 1.5
         local t
         if total >= thr then t = "bài nghiêng về CÓ / THUẬN LỢI."
         elseif total <= -thr then t = "bài nghiêng về KHÔNG / NÊN CÂN NHẮC LẠI."
-        else t = "bài chưa nghiêng hẳn bên nào – kết quả tùy vào lựa chọn của bạn." end
-        paras[#paras + 1] = "VỀ CÂU HỎI CÓ/KHÔNG – " .. t
+        else t = "bài chưa nghiêng hẳn bên nào, kết quả tùy lựa chọn của bạn." end
+        paras[#paras + 1] = "CÓ HAY KHÔNG · " .. t
     end
     if q ~= "" and is_timing(q) then
         paras[#paras + 1] = "Tarot không đoán được ngày giờ; hãy xem lá cuối như xu hướng chung."
@@ -459,15 +489,14 @@ local function compose_reading(draws, question, deal_rev)
             or p < 0 and "Chậm lại, chăm sóc bản thân và rút bài học trước khi tiến."
             or "Cân nhắc kỹ; kết quả còn tùy lựa chọn của bạn."
     end
-    if last.rev then adv = adv .. " Vì lá ngược, năng lượng này đang bị chặn hoặc cần nhìn vào bên trong trước." end
-    paras[#paras + 1] = "LỜI KHUYÊN – " .. adv
+    if last.rev then adv = adv .. " Lá cuối đang ngược nên hãy xem lại bên trong mình trước." end
+    paras[#paras + 1] = "LỜI KHUYÊN · " .. adv
     if topic == "health" or topic == "money" then
         paras[#paras + 1] = "Tarot chỉ để suy ngẫm, không thay cho tư vấn y tế hay tài chính."
     end
     return paras, q, topic
 end
 
--- ===== hình vẽ đơn giản cho từng bộ (đơn vị: s, gốc ở tâm) =====
 local SHAPES = {}
 do
     local s = {}
@@ -645,8 +674,8 @@ end
 
 function Tarot:draw_orient(bb, x, y, rev, px)
     local label = rev and "NGƯỢC" or "XUÔI"
-    local w = math.floor(px * 4.6)
-    local h = math.floor(px * 1.7)
+    local w = math.floor(px * 6.4)
+    local h = math.floor(px * 1.8)
     if rev then
         bb:paintBorder(x, y, w, h, 3, BLACK, math.floor(h / 2))
         txt(bb, label, x + math.floor(w / 2), y + math.floor(px * 0.3), px, { center = true, bold = true })
@@ -694,7 +723,7 @@ end
 function Tarot:draw_three(bb, top, bottom, W, mx)
     local gap = 24
     local cw = math.floor((W - 2 * mx - 2 * gap) / 3)
-    local labels = { "QUÁ KHỨ", "HIỆN TẠI", "TƯƠNG LAI" }
+    local labels = SPREADS[spread_of(self.spread, self.question)]
     local ah = math.floor((bottom - top) * 0.5)
     local aw = math.floor(ah * 0.578)
     if aw > cw - 40 then
@@ -711,9 +740,9 @@ function Tarot:draw_three(bb, top, bottom, W, mx)
         txt(bb, d.card.name, x + math.floor(cw / 2), y, 32, { center = true, bold = true, max_width = cw - 24 })
         y = y + 42
         if self.deal_rev then
-            local ow = math.floor(22 * 4.6)
+            local ow = math.floor(22 * 6.4)
             self:draw_orient(bb, x + math.floor((cw - ow) / 2), y, d.rev, 22)
-            y = y + math.floor(22 * 1.7) + 10
+            y = y + math.floor(22 * 1.8) + 10
         end
         local tb = TextBoxWidget:new{ text = self:meaning_of(d), face = face(24), width = cw - 40, fgcolor = BLACK }
         if y + tb:getSize().h <= bottom - 8 then tb:paintTo(bb, x + 20, y) end
@@ -722,7 +751,7 @@ function Tarot:draw_three(bb, top, bottom, W, mx)
 end
 
 function Tarot:draw_reading(bb, top, bottom, W, mx)
-    local paras, q, topic = compose_reading(self.draws, self.question, self.deal_rev)
+    local paras, q, topic = compose_reading(self.draws, self.question, self.spread)
     local y = top
     local head
     if q ~= "" then head = "Câu hỏi: " .. q else head = "Chưa đặt câu hỏi – luận giải tổng quát (bấm CÂU HỎI để hỏi)." end
@@ -806,13 +835,23 @@ function Tarot:paintTo(bb, x, y)
                 self.view = (self.view == "read") and "cards" or "read"
                 UIManager:setDirty(self, "ui")
             end, false, 1.3 },
+            { "TRẢI BÀI", function()
+                self.spread = ((self.spread or 0) + 1) % 5
+                UIManager:setDirty(self, "ui")
+            end, false, 1.2 },
             { self.allow_rev and "NGƯỢC: BẬT" or "NGƯỢC: TẮT", function()
                 self.allow_rev = not self.allow_rev
                 UIManager:setDirty(self, "ui")
             end, false, 1.5 },
+            { "LÀM TRẮNG", function()
+                self.draws, self.question, self.view, self.spread = nil, "", "cards", nil
+                self.img_missing = false
+                clear_imgs()
+                UIManager:setDirty(self, "full")
+            end, false, 1.3 },
             { "THOÁT", function() self:close() end, false, 1 },
         }
-        local bh, gap = 84, 16
+        local bh, gap = 84, 10
         local by = H - 30 - bh - 22
         local totw = 0
         for _, b in ipairs(list) do totw = totw + b[4] end
@@ -822,10 +861,10 @@ function Tarot:paintTo(bb, x, y)
             local bw = math.floor(avail * b[4] / totw)
             if b[3] then
                 bb:paintRoundedRect(bx, by, bw, bh, BLACK, 30)
-                txt(bb, b[1], bx + math.floor(bw / 2), by + 22, 28, { center = true, bold = true, color = WHITE })
+                txt(bb, b[1], bx + math.floor(bw / 2), by + 24, 24, { center = true, bold = true, color = WHITE })
             else
                 bb:paintBorder(bx, by, bw, bh, 4, BLACK, 30)
-                txt(bb, b[1], bx + math.floor(bw / 2), by + 22, 28, { center = true, bold = true })
+                txt(bb, b[1], bx + math.floor(bw / 2), by + 24, 24, { center = true, bold = true })
             end
             self.hits[#self.hits + 1] = { x = bx, y = by, w = bw, h = bh, fn = b[2] }
             bx = bx + bw + gap
