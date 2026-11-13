@@ -1678,13 +1678,17 @@ function VNDash:refresh(manual)
             elseif key == "today" then
                 load_cards()
                 local now = os.time()
-                if not self.gold or now - (self.gold_ts or 0) > 1800 then
-                    local gd = load_gold()
-                    if gd then self.gold, self.gold_ts = gd, now end
-                end
                 if not self.weather or now - (self.weather_ts or 0) > 1800 then
-                    local wd = load_weather()
-                    if wd then self.weather, self.weather_ts = wd, now end
+                    local okw, wd = pcall(load_weather)
+                    if not (okw and wd) then
+                        log("today: weather retry (" .. tostring(wd) .. ")")
+                        okw, wd = pcall(load_weather)
+                    end
+                    if okw and wd then self.weather, self.weather_ts = wd, now end
+                end
+                if not self.gold or now - (self.gold_ts or 0) > 1800 then
+                    local okg, gd = pcall(load_gold)
+                    if okg and gd then self.gold, self.gold_ts = gd, now end
                 end
             elseif key == "watch" then
                 self.watch = load_watch()
@@ -1816,7 +1820,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-13 b9"
+local BUILD = "2026-11-13 b10"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local RAW_BASE = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/"
@@ -2186,7 +2190,7 @@ function VNDash:drawTabs(bb, W)
     local mx, ty, th, gap = 36, 128, 62, 12
     local n = #TABS + 1
     local tw = math.floor((W - 2 * mx - (n - 1) * gap) / n)
-    local fs = (tw >= 200) and 28 or 22
+    local fs = (tw >= 250) and 28 or ((tw >= 200) and 22 or 20)
     for i, t in ipairs(TABS) do
         local tx = mx + (i - 1) * (tw + gap)
         if self.tab == t[1] then
