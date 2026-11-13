@@ -187,7 +187,7 @@ for si, su in ipairs(SUITS) do
     for ri, r in ipairs(RANKS) do
         local mn = MINOR[si][ri]
         CARDS[#CARDS + 1] = {
-            idx = #CARDS + 1, kind = su[3], suit = si, name = r[2] .. " " .. su[1], en = r[3] .. " of " .. su[2],
+            idx = #CARDS + 1, kind = su[3], suit = si, rank = ri, name = r[2] .. " " .. su[1], en = r[3] .. " of " .. su[2],
             up = mn[1], rev = mn[2], pol = mn[3], domain = su[4], top = r[1], bottom = su[5],
         }
     end
@@ -338,6 +338,39 @@ local function fetch_imgs(list)
     return true
 end
 
+local PF_LOCK = "/tmp/vn_tarot_pf.lock"
+local function count_imgs()
+    local n = 0
+    for i = 1, #IMG do if have_img(i) then n = n + 1 end end
+    return n
+end
+
+-- tải ngầm toàn bộ ảnh còn thiếu (chạy nền, không chặn màn hình)
+local function prefetch_all()
+    local lines = {
+        "find /tmp -maxdepth 1 -name vn_tarot_pf.lock -mmin +20 -delete 2>/dev/null",
+        '[ -e "' .. PF_LOCK .. '" ] && exit 0',
+        'touch "' .. PF_LOCK .. '"',
+        'mkdir -p "' .. IMGDIR .. '"',
+    }
+    local any = false
+    for i = 1, #IMG do
+        if not have_img(i) then
+            any = true
+            local f = img_file(i)
+            lines[#lines + 1] = string.format('[ -s "%s" ] || { curl -sS -f -L --retry 3 --retry-delay 2 -m 25 --connect-timeout 8 -A "%s" -o "%s.bg" "%s" && mv -f "%s.bg" "%s"; rm -f "%s.bg"; sleep 1; }',
+                f, UA, f, img_url(i), f, f, f)
+        end
+    end
+    if not any then return end
+    lines[#lines + 1] = 'rm -f "' .. PF_LOCK .. '"'
+    local sh = io.open("/tmp/vn_tarot_pf.sh", "w")
+    if not sh then return end
+    sh:write(table.concat(lines, "\n") .. "\n")
+    sh:close()
+    os.execute("sh /tmp/vn_tarot_pf.sh >/dev/null 2>&1 &")
+end
+
 local img_cache = {}
 local function clear_imgs()
     for k, b in pairs(img_cache) do
@@ -380,6 +413,10 @@ local MODES = {
     { label = "3 tháng tới", up = "3 THÁNG TỚI", n = 3, period = "3 tháng tới",
         labels = { "THÁNG 1", "THÁNG 2", "THÁNG 3" },
         roles = { "tháng đầu, giai đoạn mở màn", "tháng giữa, lúc mọi thứ rõ dần", "tháng cuối, kết quả của cả chặng" } },
+    { label = "6 tháng tới", up = "6 THÁNG TỚI", n = 6, period = "6 tháng tới",
+        labels = { "THÁNG 1", "THÁNG 2", "THÁNG 3", "THÁNG 4", "THÁNG 5", "THÁNG 6" },
+        roles = { "tháng mở màn", "tháng thứ hai, khi mọi thứ bắt đầu chuyển động", "tháng thứ ba, chặng giữa đầu tiên",
+            "tháng thứ tư, lúc thử thách hoặc cơ hội lộ rõ", "tháng thứ năm, giai đoạn gặt hái hoặc điều chỉnh", "tháng thứ sáu, kết quả của nửa năm" } },
 }
 
 local function spread_for(topic)
@@ -454,6 +491,87 @@ local function tone_of(d, tname)
     return "chưa tốt hay xấu, tùy cách bạn chọn trong " .. tname
 end
 
+-- ===== góc nhìn riêng cho từng chủ đề: { Gậy, Cốc, Kiếm, Tiền, Ẩn Chính, thuận, khó, trung tính } =====
+local LENS = {
+    overview = { "Hành động, đam mê và dự định mới đang dẫn dắt.", "Cảm xúc và các mối quan hệ đang là chủ đạo.",
+        "Suy nghĩ, quyết định và thử thách tinh thần là trọng tâm.", "Chuyện thực tế (tiền, việc, sức khỏe) là nền của mọi thứ.",
+        "Một giai đoạn mang tính bước ngoặt trong đời bạn.",
+        "Nhìn chung là giai đoạn thuận, cứ mạnh dạn tiến.", "Giai đoạn cần chậm lại, chăm sóc mình trước.", "Mọi thứ đang cân bằng, bạn là người nghiêng cán cân." },
+    money = { "Tiền đến từ hành động: dự án, kinh doanh, nghề tay trái, chủ động tìm nguồn thu.",
+        "Cảm xúc đang chi phối chuyện tiền: dễ tiêu theo hứng, hoặc tiền dính tới người thân, người yêu.",
+        "Cần tính toán, đàm phán, đọc kỹ giấy tờ; dễ có tranh chấp hoặc quyết định khó về tiền.",
+        "Lá nói thẳng vào thu nhập, tiết kiệm, tài sản và dòng tiền thực tế.",
+        "Một bước ngoặt tài chính, không chỉ là chi tiêu hằng ngày.",
+        "Dòng tiền có cơ hội cải thiện; tận dụng nhưng giữ kỷ luật chi tiêu.",
+        "Giữ an toàn: hạn chế vay mượn, chi lớn hay đầu tư theo cảm xúc lúc này.",
+        "Tài chính đang đứng yên; kế hoạch của bạn sẽ quyết định chiều đi." },
+    love = { "Sức hút, đam mê, sự chủ động theo đuổi; lửa có nhưng cần giữ cho bền.",
+        "Lá nói thẳng vào trái tim: cảm xúc, sự gắn kết, rung động.",
+        "Lời nói, hiểu lầm, khoảng cách hoặc lý trí đang lấn át cảm xúc.",
+        "Sự ổn định, cam kết lâu dài, những chuyện thực tế khi về chung một nhà.",
+        "Mối quan hệ đang ở giai đoạn mang tính định mệnh hoặc chuyển mình.",
+        "Tình cảm có tín hiệu tốt; hãy chủ động bày tỏ.",
+        "Đừng ép; cho nhau khoảng lặng và nói chuyện thật lòng trước.",
+        "Chuyện tình cảm còn bỏ ngỏ, tùy cách hai người vun đắp." },
+    work = { "Dự án mới, tham vọng, cơ hội thể hiện; năng lượng khởi nghiệp.",
+        "Không khí đồng nghiệp, mức độ hài lòng với công việc, làm bằng cảm hứng.",
+        "Cạnh tranh, áp lực, quyết định khó; chú ý giao tiếp và hợp đồng.",
+        "Thu nhập, tay nghề, thăng tiến bền vững và kết quả cụ thể.",
+        "Một bước ngoặt sự nghiệp: đổi vai trò, đổi hướng hoặc một cột mốc lớn.",
+        "Công việc thuận đà; nhận thêm trách nhiệm hay đề xuất ý tưởng lúc này là hợp.",
+        "Giữ chắc vị trí hiện tại, tránh quyết định nghỉ hay nhảy việc vội vàng.",
+        "Công việc ổn định nhưng chưa bứt phá; cần một bước chủ động từ bạn." },
+    study = { "Động lực, sự hứng thú với môn học, dám thử hướng học mới.",
+        "Cảm xúc khi học, quan hệ với thầy cô bạn bè, học vì yêu thích.",
+        "Thi cử, tư duy, phân tích, áp lực điểm số.",
+        "Chăm chỉ đều đặn, kỹ năng thực hành, học phí và bằng cấp.",
+        "Một cột mốc học tập lớn: kỳ thi quan trọng, chọn ngành, đi du học.",
+        "Việc học suôn sẻ; giữ nhịp ôn tập là đủ.",
+        "Cần lịch học rõ ràng, nghỉ ngơi đủ và hỏi sớm khi vướng.",
+        "Kết quả học tập tùy vào độ đều đặn trong những tuần tới." },
+    family = { "Năng lượng sôi nổi, dự định chung; đôi khi va chạm tính khí.",
+        "Tình thương, sự gắn bó, cảm xúc giữa các thành viên.",
+        "Bất đồng, lời nói làm tổn thương, khoảng cách thế hệ.",
+        "Nhà cửa, tài chính chung, sức khỏe người thân, sự ổn định.",
+        "Một biến chuyển lớn trong nhà: thành viên mới, chuyển nhà, thay đổi vai trò.",
+        "Không khí gia đình ấm; dịp tốt để gần nhau hơn.",
+        "Nhường một bước, nói nhẹ lại; tránh tranh cãi lúc nóng.",
+        "Gia đình bình thường; một cử chỉ quan tâm nhỏ sẽ tạo khác biệt." },
+    friends = { "Hoạt động chung, chuyến đi, cuộc vui, bạn mới.",
+        "Tình cảm chân thành, sẻ chia, gắn bó.",
+        "Hiểu lầm, thị phi, lời nói qua lại; cần giữ ranh giới.",
+        "Giúp đỡ thực tế, tiền bạc giữa bạn bè, tình bạn lâu năm.",
+        "Một người bạn có vai trò quan trọng với chặng đường của bạn.",
+        "Tình bạn thuận; hẹn gặp, rủ đi chơi là hợp lúc này.",
+        "Chọn bạn mà chơi; tránh cho vay hay kể chuyện riêng lúc này.",
+        "Các mối quan hệ bình ổn, chưa có gì đặc biệt." },
+    health = { "Năng lượng thể chất, vận động; coi chừng quá sức.",
+        "Sức khỏe tinh thần, cảm xúc, giấc ngủ.",
+        "Căng thẳng đầu óc, lo âu; có thể liên quan tới thăm khám.",
+        "Cơ thể, ăn uống, thói quen và sự hồi phục chậm mà chắc.",
+        "Một thay đổi lớn trong lối sống hoặc cách chăm sóc bản thân.",
+        "Cơ thể đang hồi phục tốt; giữ thói quen lành mạnh.",
+        "Nghỉ ngơi nhiều hơn và đi khám nếu có dấu hiệu lạ.",
+        "Sức khỏe ổn; chú ý những thói quen nhỏ hằng ngày." },
+    self = { "Đam mê, sự can đảm, ngọn lửa muốn sống đúng là mình.",
+        "Thế giới cảm xúc, khả năng yêu thương và chữa lành chính mình.",
+        "Niềm tin, suy nghĩ, những câu chuyện bạn tự kể về bản thân.",
+        "Thói quen, kỷ luật, cách bạn chăm sóc cơ thể và nền tảng sống.",
+        "Một giai đoạn trưởng thành, thay đổi từ bên trong.",
+        "Bạn đang lớn lên đúng hướng; tin vào mình hơn.",
+        "Bớt khắt khe với bản thân; cho mình thời gian.",
+        "Một khoảng lặng để tự hỏi mình thật sự muốn gì." },
+    decision = { "Nghiêng về lựa chọn theo đam mê và hành động nhanh.",
+        "Hãy lắng nghe cảm xúc, chọn điều khiến bạn thấy đủ đầy.",
+        "Cần phân tích lý trí, cân nhắc thiệt hơn, nói rõ ràng.",
+        "Xét thực tế: chi phí, lợi ích lâu dài, độ an toàn.",
+        "Quyết định này quan trọng hơn bạn nghĩ, có thể đổi hướng cả chặng đường.",
+        "Bài ủng hộ bạn bước tới.", "Chưa phải lúc; thu thêm thông tin rồi hãy quyết.",
+        "Hai hướng đều có lý; chọn hướng bạn chịu được hệ quả." },
+}
+local COURT_WHO = { [11] = "một người trẻ hoặc tin tức mới", [12] = "một người năng động đang tiến về phía bạn",
+    [13] = "một người phụ nữ trưởng thành hoặc phía mềm mỏng của bạn", [14] = "một người đàn ông có vị thế hoặc phía quyết đoán của bạn" }
+
 local PHRASE = {
     " Ở vị trí này, lá là %s: %s.",
     " Xét về %s: %s.",
@@ -479,11 +597,16 @@ local function compose_reading(draws, topic, lay, deal_rev)
         local ph = PHRASE[(c.idx + i) % 3 + 1]
         local s = (labels[i] or "LÁ") .. " · " .. c.en .. (d.rev and " (ngược)" or "") .. "\n" ..
             (d.rev and c.rev or c.up) .. string.format(ph, roles[i] or "thông điệp", tone_of(d, tp.name))
+        local lens = LENS[tp.key] or LENS.overview
         if c.kind == "major" then
-            s = s .. " Là lá Ẩn Chính nên sức nặng lớn hơn các lá thường."
+            s = s .. "\n→ " .. lens[5] .. " Lá Ẩn Chính nên sức nặng lớn hơn các lá thường."
             majors = majors + 1
         else
             suitn[c.suit] = suitn[c.suit] + 1
+            s = s .. "\n→ " .. lens[c.suit]
+            if c.rank and c.rank >= 11 and tp.key ~= "health" and tp.key ~= "money" then
+                s = s .. " Lá hoàng gia có thể là " .. COURT_WHO[c.rank] .. "."
+            end
         end
         if d.rev then revs = revs + 1 end
         if lay.trend and i > 1 then
@@ -548,6 +671,12 @@ local function compose_reading(draws, topic, lay, deal_rev)
             or "Cân nhắc kỹ; kết quả còn tùy lựa chọn của bạn."
     end
     if last.rev then adv = adv .. " Lá cuối đang ngược nên hãy xem lại bên trong mình trước." end
+    do
+        local lens = LENS[tp.key] or LENS.overview
+        local avg = total / n
+        local t = avg >= 0.4 and lens[6] or (avg <= -0.3 and lens[7] or lens[8])
+        paras[#paras + 1] = "VỀ " .. tp.up .. " · " .. t
+    end
     paras[#paras + 1] = "LỜI KHUYÊN · " .. adv
     if topic == "health" or topic == "money" then
         paras[#paras + 1] = "Tarot chỉ để suy ngẫm, không thay cho tư vấn y tế hay tài chính."
@@ -725,7 +854,7 @@ end
 local Tarot = InputContainer:extend{
     name = "vn_tarot",
     covers_fullscreen = true,
-    allow_rev = true,
+    allow_rev = false,
     deal_rev = false,
     view = "cards",
     topic = "overview",
@@ -938,7 +1067,9 @@ function Tarot:draw_idle(bb, top, bottom, W)
     txt(bb, m.up, cx, fy + 290, 84, { center = true, bold = true, max_width = fw - 80 })
     local kname = (self.kind and self.kind > 1) and KINDS[self.kind].label or ("theo thời gian · " .. lay.n .. " lá")
     txt(bb, "Kiểu bốc: " .. kname, cx, fy + 412, 30, { center = true, color = GRAY5, max_width = fw - 80 })
-    txt(bb, "Bấm BỐC BÀI để rút", cx, fy + fh - 62, 26, { center = true, color = GRAY5 })
+    local nimg = count_imgs()
+    local tail = nimg >= #IMG and "Đã có đủ 78 ảnh bài" or ("Ảnh bài đã tải: " .. nimg .. "/78 (đang tải ngầm khi có Wi-Fi)")
+    txt(bb, "Bấm BỐC BÀI để rút  ·  " .. tail, cx, fy + fh - 62, 24, { center = true, color = GRAY5, max_width = fw - 60 })
     -- góc trang trí
     for _, c in ipairs({ { fx - 8, fy - 8, 1, 1 }, { fx + fw + 8, fy - 8, -1, 1 }, { fx - 8, fy + fh + 8, 1, -1 }, { fx + fw + 8, fy + fh + 8, -1, -1 } }) do
         bb:paintRoundedRect(c[1] - 7, c[2] - 7, 14, 14, BLACK, 7)
@@ -1256,6 +1387,10 @@ function Tarot:start()
     self.ges_events = { Tap = { GestureRange:new{ ges = "tap", range = self.dimen } } }
     self.key_events = { CloseTarot = { { "Back" } } }
     UIManager:show(self, "full")
+    pcall(function()
+        local NetworkMgr = require("ui/network/manager")
+        if NetworkMgr:isOnline() then prefetch_all() end
+    end)
 end
 
 local M = {}
