@@ -1797,7 +1797,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-13 b5"
+local BUILD = "2026-11-13 b6"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local function self_update()
@@ -3556,6 +3556,8 @@ end
 
 function VNDash:start()
     os.execute("mkdir -p /mnt/us/vn_dash")
+    -- các bản cũ từng bật preventScreenSaver và nó nằm lại trong powerd: tắt hẳn đi
+    os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 0 >/dev/null 2>&1")
     -- giữ máy thức khi đang mở bảng điện, nhưng vẫn để gập cover là ngủ như bình thường
     self.keepalive = function()
         pcall(function()
