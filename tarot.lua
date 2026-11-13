@@ -438,19 +438,66 @@ local function tone_of(d, tname)
     return "chưa tốt hay xấu, tùy cách bạn chọn trong " .. tname
 end
 
-local function compose_reading(draws, topic, lay)
+local PHRASE = {
+    " Ở vị trí này, lá là %s: %s.",
+    " Xét về %s: %s.",
+    " Với vai trò %s, lá cho thấy %s.",
+}
+local SUIT_NOTE = {
+    "Bộ Gậy chiếm nhiều: %s đang được thúc đẩy bởi hành động, đam mê và tham vọng.",
+    "Bộ Cốc chiếm nhiều: cảm xúc và các mối quan hệ đang chi phối %s.",
+    "Bộ Kiếm chiếm nhiều: đầu óc, lời nói và những quyết định (hoặc xung đột) đang là trọng tâm của %s.",
+    "Bộ Tiền chiếm nhiều: yếu tố thực tế, sức khỏe và nỗ lực bền bỉ đang là nền của %s.",
+}
+
+local function compose_reading(draws, topic, lay, deal_rev)
     local tp = topic_of(topic)
     local n = #draws
     local labels, roles = lay.labels, lay.roles
     local paras = {}
     local total = 0
+    local majors, revs = 0, 0
+    local suitn = { 0, 0, 0, 0 }
     for i, d in ipairs(draws) do
         local c = d.card
+        local ph = PHRASE[(c.idx + i) % 3 + 1]
         local s = (labels[i] or "LÁ") .. " · " .. c.en .. (d.rev and " (ngược)" or "") .. "\n" ..
-            (d.rev and c.rev or c.up) .. " Ở vị trí này, lá là " .. (roles[i] or "thông điệp") .. ": " .. tone_of(d, tp.name) .. "."
-        if c.kind == "major" then s = s .. " Là lá Ẩn Chính nên sức nặng lớn hơn các lá thường." end
+            (d.rev and c.rev or c.up) .. string.format(ph, roles[i] or "thông điệp", tone_of(d, tp.name))
+        if c.kind == "major" then
+            s = s .. " Là lá Ẩn Chính nên sức nặng lớn hơn các lá thường."
+            majors = majors + 1
+        else
+            suitn[c.suit] = suitn[c.suit] + 1
+        end
+        if d.rev then revs = revs + 1 end
+        if lay.trend and i > 1 then
+            local dd = score_of(d) - score_of(draws[i - 1])
+            if dd >= 1 then s = s .. " So với lá trước, không khí nhẹ hơn rõ rệt."
+            elseif dd <= -1 then s = s .. " So với lá trước, mọi thứ nặng nề hơn." end
+        end
         paras[#paras + 1] = s
         total = total + score_of(d)
+    end
+    if n >= 3 then
+        local notes = {}
+        if majors * 3 >= n then
+            notes[#notes + 1] = "Có " .. majors .. "/" .. n .. " lá Ẩn Chính: chuyện này gắn với những bước ngoặt lớn, không chỉ là việc vặt của " .. tp.name .. "."
+        elseif majors == 0 then
+            notes[#notes + 1] = "Không có lá Ẩn Chính nào: đây là chuyện đời thường, nằm trong tầm tay bạn điều chỉnh."
+        end
+        local bs, bn = 0, 0
+        for k = 1, 4 do if suitn[k] > bn then bs, bn = k, suitn[k] end end
+        if bs > 0 and bn >= math.max(2, math.ceil(n / 3)) then
+            notes[#notes + 1] = string.format(SUIT_NOTE[bs], tp.name)
+        end
+        if deal_rev then
+            if revs * 2 >= n then
+                notes[#notes + 1] = "Hơn nửa số lá bị ngược: năng lượng đang bị chặn hoặc chưa bộc lộ, hãy chậm lại và nhìn vào bên trong trước khi hành động."
+            elseif revs == 0 then
+                notes[#notes + 1] = "Không lá nào ngược: dòng chảy khá thông suốt."
+            end
+        end
+        if #notes > 0 then paras[#paras + 1] = "NHẬN ĐỊNH CHUNG · " .. table.concat(notes, " ") end
     end
     if lay.trend then
         local diff = score_of(draws[n]) - score_of(draws[1])
@@ -459,6 +506,14 @@ local function compose_reading(draws, topic, lay)
         elseif diff < -0.5 then t = "mạch chuyện đi xuống, chặng cuối cần thận trọng."
         else t = "mạch chuyện khá ổn định, không đổi chiều đột ngột." end
         paras[#paras + 1] = "TỔNG QUAN · Với " .. tp.name .. " trong " .. lay.period .. ", " .. t
+    end
+    if lay.cross then
+        local o = score_of(draws[10])
+        local t
+        if o >= 1 then t = "nghiêng về thuận lợi, nếu bạn giữ được hướng đi hiện tại."
+        elseif o <= -1 then t = "cần dè chừng; lá Lời khuyên là chỗ bạn có thể xoay chuyển."
+        else t = "còn mở, phụ thuộc nhiều vào lựa chọn của bạn từ lá Lời khuyên." end
+        paras[#paras + 1] = "KẾT CỤC · Với " .. tp.name .. ", kết cục dự kiến " .. t
     end
     if topic == "decision" then
         local thr = (n == 1) and 1 or n * 0.5
@@ -794,6 +849,35 @@ function Tarot:draw_many(bb, top, bottom, W, mx)
         local y0 = top + r * (rowh + gap)
         bb:paintBorder(x, y0, cw, rowh, 3, BLACK, small and 16 or 24)
         txt(bb, labels[i] or "", x + math.floor(cw / 2), y0 + 8, small and 20 or 26, { center = true, bold = true, color = GRAY5, max_width = cw - 12 })
+        if n <= 3 then
+            local ih = rowh - lh - 24
+            local iw = math.floor(ih * 0.578)
+            local maxw = math.floor(cw * 0.46)
+            if iw > maxw then
+                iw = maxw
+                ih = math.floor(iw / 0.578)
+            end
+            local ix = x + 16
+            local area_h = rowh - lh
+            draw_card(bb, ix, y0 + lh + math.floor((area_h - ih) / 2), iw, ih, d.card, d.rev)
+            local tx = ix + iw + 16
+            local tw = x + cw - 14 - tx
+            local nm = TextBoxWidget:new{ text = d.card.en, face = face(30), width = tw, fgcolor = BLACK, bold = true }
+            local mt = TextBoxWidget:new{ text = self:meaning_of(d), face = face(24), width = tw, fgcolor = BLACK }
+            local opx = 22
+            local oh = self.deal_rev and (math.floor(opx * 1.8) + 14) or 0
+            local gh = nm:getSize().h + 12 + oh + mt:getSize().h
+            local ty = y0 + lh + math.max(0, math.floor((area_h - gh) / 2))
+            nm:paintTo(bb, tx, ty)
+            ty = ty + nm:getSize().h + 12
+            if self.deal_rev then
+                self:draw_orient(bb, tx, ty, d.rev, opx)
+                ty = ty + oh
+            end
+            mt:paintTo(bb, tx, ty)
+            nm:free()
+            mt:free()
+        else
         local ax = x + math.floor((cw - aw) / 2)
         draw_card(bb, ax, y0 + lh, aw, ah, d.card, d.rev)
         local y = y0 + lh + ah + 8
@@ -811,6 +895,7 @@ function Tarot:draw_many(bb, top, bottom, W, mx)
             if th <= room then tb:paintTo(bb, x + 18, y + math.floor((room - th) / 2)) end
             tb:free()
         end
+        end
     end
 end
 
@@ -825,18 +910,18 @@ function Tarot:draw_idle(bb, top, bottom, W)
     local m = MODES[self.mode]
     local lay = self:cur_layout()
     txt(bb, "-  CHỦ ĐỀ  -", cx, fy + 38, 26, { center = true, bold = true, color = GRAY5 })
-    txt(bb, tp.up, cx, fy + 78, 104, { center = true, bold = true, max_width = fw - 80 })
+    txt(bb, tp.up, cx, fy + 80, 84, { center = true, bold = true, max_width = fw - 80 })
     -- đường kẻ trang trí
-    local dy = fy + 236
+    local dy = fy + 222
     bb:paintRect(cx - 300, dy, 240, 3, BLACK)
     bb:paintRect(cx + 60, dy, 240, 3, BLACK)
     bb:paintRoundedRect(cx - 10, dy - 9, 20, 20, BLACK, 10)
     bb:paintRoundedRect(cx - 40, dy - 4, 10, 10, BLACK, 5)
     bb:paintRoundedRect(cx + 30, dy - 4, 10, 10, BLACK, 5)
-    txt(bb, "-  THỜI GIAN  -", cx, fy + 262, 26, { center = true, bold = true, color = GRAY5 })
-    txt(bb, m.up, cx, fy + 300, 68, { center = true, bold = true, max_width = fw - 80 })
+    txt(bb, "-  THỜI GIAN  -", cx, fy + 248, 26, { center = true, bold = true, color = GRAY5 })
+    txt(bb, m.up, cx, fy + 290, 84, { center = true, bold = true, max_width = fw - 80 })
     local kname = (self.kind and self.kind > 1) and KINDS[self.kind].label or ("theo thời gian · " .. lay.n .. " lá")
-    txt(bb, "Kiểu bốc: " .. kname, cx, fy + 404, 30, { center = true, color = GRAY5, max_width = fw - 80 })
+    txt(bb, "Kiểu bốc: " .. kname, cx, fy + 412, 30, { center = true, color = GRAY5, max_width = fw - 80 })
     txt(bb, "Bấm BỐC BÀI để rút", cx, fy + fh - 62, 26, { center = true, color = GRAY5 })
     -- góc trang trí
     for _, c in ipairs({ { fx - 8, fy - 8, 1, 1 }, { fx + fw + 8, fy - 8, -1, 1 }, { fx - 8, fy + fh + 8, 1, -1 }, { fx + fw + 8, fy + fh + 8, -1, -1 } }) do
@@ -846,7 +931,7 @@ end
 
 function Tarot:draw_reading(bb, top, bottom, W, mx)
     local lay = self:cur_layout()
-    local paras, tp = compose_reading(self.draws, self.topic, lay)
+    local paras, tp = compose_reading(self.draws, self.topic, lay, self.deal_rev)
     local y = top
     local head = tp.label .. "  ·  " .. (self.kind > 1 and KINDS[self.kind].label or MODES[self.mode].label)
     local hb = TextBoxWidget:new{ text = head, face = face(34), width = W - 2 * mx, fgcolor = BLACK, bold = true }
@@ -967,7 +1052,7 @@ function Tarot:paintTo(bb, x, y)
         end
         local mid = math.floor((top + bottom) / 2)
         if self.shuffling then
-            txt(bb, "Đang xáo bài…", math.floor(W / 2), mid - 40, 56, { center = true, bold = true })
+            txt(bb, self.shuf_msg or "Đang xáo bài…", math.floor(W / 2), mid - 40, 56, { center = true, bold = true })
             txt(bb, "Hãy giữ chủ đề trong đầu", math.floor(W / 2), mid + 40, 30, { center = true, color = GRAY5 })
         elseif not self.draws then
             self:draw_idle(bb, top, bottom, W)
@@ -985,7 +1070,9 @@ function Tarot:paintTo(bb, x, y)
             self:draw_many(bb, top, bottom, W, mx)
         end
         if showing_cards and self.img_missing then
-            txt(bb, "Chưa tải được ảnh bài – bật Wi-Fi rồi bốc lại để có ảnh", W - mx, bottom + 2, 22, { right = true, color = GRAY5 })
+            local note = "Chưa có ảnh bài – chạm vào đây để tải lại (giữ nguyên bài đã bốc)"
+            local nw = txt(bb, note, W - mx, bottom + 2, 22, { right = true, color = BLACK, bold = true })
+            self.hits[#self.hits + 1] = { x = W - mx - nw - 20, y = bottom - 14, w = nw + 40, h = 32, fn = function() self:retry_imgs() end }
         end
         -- nút
         local list = {
@@ -1036,29 +1123,77 @@ function Tarot:paintTo(bb, x, y)
     end
 end
 
+-- tải ảnh còn thiếu cho danh sách lá; có thể bật Wi-Fi giữa chừng, bài đã bốc được giữ nguyên
+function Tarot:load_imgs(done)
+    local list = {}
+    for _, d in ipairs(self.draws or {}) do list[#list + 1] = d.card.idx end
+    local function missing()
+        for _, i in ipairs(list) do
+            if not have_img(i) then return true end
+        end
+        return false
+    end
+    local finished = false
+    local function finish()
+        if finished then return end
+        finished = true
+        self.img_missing = missing()
+        clear_imgs()
+        done()
+    end
+    if not missing() then return finish() end
+    self.shuf_msg = "Đang tải ảnh bài…"
+    UIManager:setDirty(self, "ui")
+    local function go()
+        if finished then return end
+        UIManager:scheduleIn(0.3, function()
+            pcall(fetch_imgs, list)
+            finish()
+        end)
+    end
+    local ok = pcall(function()
+        local NetworkMgr = require("ui/network/manager")
+        NetworkMgr:runWhenOnline(go)
+    end)
+    if not ok then go() end
+    UIManager:scheduleIn(60, function() finish() end)
+end
+
+function Tarot:retry_imgs()
+    if self.shuffling or not self.draws then return end
+    self.shuffling = true
+    self.shuf_msg = "Đang tải ảnh bài…"
+    UIManager:setDirty(self, "full")
+    self:load_imgs(function()
+        self.shuffling = false
+        UIManager:setDirty(self, "full")
+    end)
+end
+
 function Tarot:deal_n(n)
     if self.shuffling then return end
     self.shuffling = true
+    self.shuf_msg = "Đang xáo bài…"
     self.view = "cards"
     self.rpage = 1
     UIManager:setDirty(self, "full")
     UIManager:scheduleIn(0.6, function()
-        pcall(function()
+        local ok = pcall(function()
             seed()
             clear_imgs()
             self.deal_rev = self.allow_rev
             self.draws = deal(n, self.allow_rev)
-            local list = {}
-            for _, d in ipairs(self.draws) do list[#list + 1] = d.card.idx end
-            fetch_imgs(list)
-            self.img_missing = false
-            for _, i in ipairs(list) do
-                if not have_img(i) then self.img_missing = true end
-            end
             save_history(self.draws, self.topic, self:cur_layout().name)
         end)
-        self.shuffling = false
-        UIManager:setDirty(self, "full")
+        if not ok or not self.draws then
+            self.shuffling = false
+            UIManager:setDirty(self, "full")
+            return
+        end
+        self:load_imgs(function()
+            self.shuffling = false
+            UIManager:setDirty(self, "full")
+        end)
     end)
 end
 
