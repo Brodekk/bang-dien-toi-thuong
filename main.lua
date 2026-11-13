@@ -1570,7 +1570,8 @@ function VNDash:close()
         end)
         self.autowifi_saved = nil
     end
-    os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 0 >/dev/null 2>&1")
+    if self.keepalive then UIManager:unschedule(self.keepalive) end
+    self.keepalive = nil
     if self.old_rotation ~= nil and self.old_rotation ~= Screen:getRotationMode() then
         Screen:setRotationMode(self.old_rotation)
     end
@@ -1796,7 +1797,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-12 b4"
+local BUILD = "2026-11-13 b5"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local function self_update()
@@ -2043,6 +2044,29 @@ function VNDash:drawHeader(bb, W, H)
         if t[1] == self.tab then title = t[2] end
     end
     txt(bb, title, mx + 34, 42, 44, { bold = true, color = WHITE })
+    -- pin
+    local bt = self.batt
+    if not bt or os.time() - bt.ts > 30 then
+        local okb, pct, chg = pcall(function()
+            local pd = Device:getPowerDevice()
+            return pd:getCapacity(), pd:isCharging()
+        end)
+        bt = { pct = okb and tonumber(pct) or nil, chg = okb and chg or false, ts = os.time() }
+        self.batt = bt
+    end
+    local rx = W - mx - 30
+    if bt.pct then
+        local label = tostring(bt.pct) .. "%"
+        local tw = txt(bb, label, rx, 52, 28, { right = true, bold = true, color = WHITE })
+        local bx = rx - (tw or 64) - 16 - 44
+        local by = 56
+        bb:paintBorder(bx, by, 44, 24, 3, WHITE, 4)
+        bb:paintRect(bx + 44, by + 7, 4, 10, WHITE)
+        local fw = math.max(0, math.min(32, math.floor(32 * bt.pct / 100)))
+        bb:paintRect(bx + 5, by + 5, fw, 14, WHITE)
+        if bt.chg then txt(bb, "sạc", bx - 10, 56, 20, { right = true, color = WHITE }) end
+        rx = bx - (bt.chg and 90 or 34)
+    end
     local right
     if self.tab == "stocks" then
         right = is_trading_time() and "Đang giao dịch" or "Ngoài giờ giao dịch"
@@ -2051,7 +2075,7 @@ function VNDash:drawHeader(bb, W, H)
     end
     if self.offline then right = "Mất Wi-Fi · đang thử kết nối lại…" end
     if not self.offline and self.updated and W > 1500 and self.tab ~= "calendar" then right = right .. "  ·  cập nhật " .. self.updated end
-    txt(bb, right, W - mx - 34, 56, 26, { right = true, color = WHITE })
+    txt(bb, right, rx, 56, 26, { right = true, color = WHITE })
 end
 
 function VNDash:drawTabs(bb, W)
@@ -3532,7 +3556,17 @@ end
 
 function VNDash:start()
     os.execute("mkdir -p /mnt/us/vn_dash")
-    os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 1 >/dev/null 2>&1")
+    -- giữ máy thức khi đang mở bảng điện, nhưng vẫn để gập cover là ngủ như bình thường
+    self.keepalive = function()
+        pcall(function()
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("InputEvent"))
+            local pd = Device:getPowerDevice()
+            if pd and pd.resetT1Timeout then pd:resetT1Timeout() end
+        end)
+        UIManager:scheduleIn(120, self.keepalive)
+    end
+    UIManager:scheduleIn(120, self.keepalive)
     pcall(function()
         self.old_autowifi = G_reader_settings:readSetting("auto_disable_wifi")
         G_reader_settings:saveSetting("auto_disable_wifi", false)
