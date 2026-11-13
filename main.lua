@@ -1820,7 +1820,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-13 b10"
+local BUILD = "2026-11-13 b11"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local RAW_BASE = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/"
@@ -2190,7 +2190,18 @@ function VNDash:drawTabs(bb, W)
     local mx, ty, th, gap = 36, 128, 62, 12
     local n = #TABS + 1
     local tw = math.floor((W - 2 * mx - (n - 1) * gap) / n)
-    local fs = (tw >= 250) and 28 or ((tw >= 200) and 22 or 20)
+    -- cỡ chữ chung cho mọi tab: lớn nhất mà nhãn dài nhất vẫn nằm gọn trong ô
+    local fs = 28
+    while fs > 14 do
+        local widest = 0
+        for _, t in ipairs(TABS) do
+            local m = TextWidget:new{ text = t[2], face = face(fs), bold = true, padding = 0 }
+            widest = math.max(widest, m:getWidth())
+            m:free()
+        end
+        if widest <= tw - 24 then break end
+        fs = fs - 1
+    end
     for i, t in ipairs(TABS) do
         local tx = mx + (i - 1) * (tw + gap)
         if self.tab == t[1] then
