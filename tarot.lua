@@ -330,72 +330,60 @@ local function clear_imgs()
     end
 end
 
--- ===== phân tích câu hỏi =====
-local FOLD = {}
-do
-    local lower = {
-        a = "àáảãạăằắẳẵặâầấẩẫậ", e = "èéẻẽẹêềếểễệ", i = "ìíỉĩị", o = "òóỏõọôồốổỗộơờớởỡợ",
-        u = "ùúủũụưừứửữự", y = "ỳýỷỹỵ", d = "đ",
-    }
-    local upper = {
-        a = "ÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬ", e = "ÈÉẺẼẸÊỀẾỂỄỆ", i = "ÌÍỈĨỊ", o = "ÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢ",
-        u = "ÙÚỦŨỤƯỪỨỬỮỰ", y = "ỲÝỶỸỴ", d = "Đ",
-    }
-    for _, tbl in ipairs({ lower, upper }) do
-        for base, set in pairs(tbl) do
-            for ch in set:gmatch("[\1-\127\194-\244][\128-\191]*") do FOLD[ch] = base end
-        end
-    end
-end
-
-local function fold(s)
-    local out = {}
-    for ch in tostring(s):gmatch("[\1-\127\194-\244][\128-\191]*") do
-        out[#out + 1] = FOLD[ch] or ch:lower()
-    end
-    local r = table.concat(out)
-    r = r:gsub("[^%w]", " ")
-    return " " .. r:gsub("%s+", " ") .. " "
-end
-
+-- ===== chủ đề & thời gian (chọn bằng hộp thả xuống) =====
 local TOPICS = {
-    love = { name = "chuyện tình cảm", suits = { [2] = true },
-        kw = { "yeu", "tinh yeu", "nguoi yeu", "crush", "hen ho", "chia tay", "cuoi", "hon nhan", "tai hop", "ban trai", "ban gai", "nguoi ay", "anh ay", "co ay", "tinh cam", "vo", "chong", "nguoi cu" } },
-    work = { name = "công việc", suits = { [1] = true, [4] = true },
-        kw = { "cong viec", "viec lam", "su nghiep", "xin viec", "nhay viec", "thang chuc", "cong ty", "sep", "dong nghiep", "du an", "khoi nghiep", "kinh doanh", "phong van", "nghe nghiep" } },
-    money = { name = "tiền bạc", suits = { [4] = true },
-        kw = { "tien", "tai chinh", "dau tu", "luong", "no nan", "thu nhap", "chung khoan", "vang", "mua nha", "nha dat", "co phieu", "tiet kiem" } },
-    health = { name = "sức khỏe", suits = { [4] = true, [1] = true },
-        kw = { "suc khoe", "benh", "dau om", "om dau", "giam can", "tap luyen", "kham", "phau thuat", "mat ngu", "stress", "tinh than" } },
-    study = { name = "việc học", suits = { [3] = true, [4] = true },
-        kw = { "hoc", "thi", "ky thi", "diem", "truong", "du hoc", "dai hoc", "tot nghiep", "luan van", "bang cap" } },
+    { key = "overview", label = "Tổng quan", name = "bức tranh chung của bạn" },
+    { key = "money", label = "Tài chính", name = "chuyện tài chính" },
+    { key = "love", label = "Tình cảm", name = "chuyện tình cảm" },
+    { key = "work", label = "Công việc", name = "công việc" },
+    { key = "study", label = "Học tập", name = "việc học" },
+    { key = "family", label = "Gia đình", name = "chuyện gia đình" },
+    { key = "friends", label = "Bạn bè", name = "các mối quan hệ bạn bè" },
+    { key = "health", label = "Sức khỏe", name = "sức khỏe" },
+    { key = "self", label = "Bản thân", name = "con đường phát triển bản thân" },
+    { key = "decision", label = "Quyết định", name = "quyết định bạn đang cân nhắc" },
 }
-local TOPIC_ORDER = { "love", "work", "money", "health", "study" }
 
-local function detect_topic(q)
-    local fs = fold(q)
-    local best, bn = nil, 0
-    for _, key in ipairs(TOPIC_ORDER) do
-        local n = 0
-        for _, kw in ipairs(TOPICS[key].kw) do
-            if fs:find(" " .. kw .. " ", 1, true) then n = n + 1 end
-        end
-        if n > bn then best, bn = key, n end
-    end
-    return best
+local SPREADS = {
+    { "QUÁ KHỨ", "HIỆN TẠI", "TƯƠNG LAI" },
+    { "TÌNH HUỐNG", "THỬ THÁCH", "LỜI KHUYÊN" },
+    { "BẠN", "NGƯỜI KIA / HOÀN CẢNH", "KẾT QUẢ" },
+}
+local SPREAD_ROLES = {
+    { "nền móng đã dẫn tới hiện tại", "điều đang diễn ra ngay lúc này", "hướng đi sắp tới nếu mọi thứ giữ nguyên" },
+    { "bức tranh hiện giờ", "điều đang cản trở hoặc thử thách bạn", "hướng xử lý mà bài gợi ý" },
+    { "phần của bạn trong chuyện này", "phía còn lại: người kia hoặc hoàn cảnh", "nơi mọi thứ có thể dẫn tới" },
+}
+
+local MODES = {
+    { label = "Hôm nay", n = 1, period = "hôm nay" },
+    { label = "Tình hình chung", n = 3, period = "giai đoạn này" },
+    { label = "1 tháng tới", n = 4, period = "1 tháng tới",
+        labels = { "TUẦN 1", "TUẦN 2", "TUẦN 3", "TUẦN 4" },
+        roles = { "nhịp đầu tháng", "diễn biến sang tuần thứ hai", "chặng nửa sau của tháng", "điểm hạ cánh cuối tháng" } },
+    { label = "3 tháng tới", n = 3, period = "3 tháng tới",
+        labels = { "THÁNG 1", "THÁNG 2", "THÁNG 3" },
+        roles = { "tháng đầu, giai đoạn mở màn", "tháng giữa, lúc mọi thứ rõ dần", "tháng cuối, kết quả của cả chặng" } },
+}
+
+local function spread_for(topic)
+    if topic == "love" or topic == "family" or topic == "friends" then return 3 end
+    if topic == "overview" then return 1 end
+    return 2
 end
 
-local function is_yesno(q)
-    local fs = fold(q)
-    for _, kw in ipairs({ "nen", "khong", "co duoc", "co phai", "lieu", "co nen", "co the", "duoc khong" }) do
-        if fs:find(" " .. kw .. " ", 1, true) then return true end
-    end
-    return false
+local function topic_of(key)
+    for _, t in ipairs(TOPICS) do if t.key == key then return t end end
+    return TOPICS[1]
 end
 
-local function is_timing(q)
-    local fs = fold(q)
-    return fs:find(" khi nao ", 1, true) or fs:find(" bao gio ", 1, true) or fs:find(" bao lau ", 1, true)
+-- nhãn và vai trò từng vị trí theo thời gian + chủ đề
+local function positions(mode_i, topic)
+    local m = MODES[mode_i]
+    if m.n == 1 then return { "LÁ BÀI" }, { "thông điệp chính cho " .. topic_of(topic).name } end
+    if m.labels then return m.labels, m.roles end
+    local sp = spread_for(topic)
+    return SPREADS[sp], SPREAD_ROLES[sp]
 end
 
 local function score_of(d)
@@ -406,80 +394,48 @@ local function score_of(d)
     return p
 end
 
-local SPREADS = {
-    { "QUÁ KHỨ", "HIỆN TẠI", "TƯƠNG LAI" },
-    { "TÌNH HUỐNG", "THỬ THÁCH", "LỜI KHUYÊN" },
-    { "BẠN", "NGƯỜI KIA / HOÀN CẢNH", "KẾT QUẢ" },
-    { "NGUYÊN NHÂN", "HIỆN TRẠNG", "KẾT QUẢ" },
-}
-local ROLES = {
-    { "nền móng đã dẫn tới hiện tại", "điều đang diễn ra ngay lúc này", "hướng đi sắp tới nếu mọi thứ giữ nguyên" },
-    { "bức tranh hiện giờ", "điều đang cản trở hoặc thử thách bạn", "hướng xử lý mà bài gợi ý" },
-    { "phần của bạn trong chuyện này", "phía còn lại: người kia hoặc hoàn cảnh", "nơi mọi thứ có thể dẫn tới" },
-    { "gốc rễ của vấn đề", "trạng thái hiện tại", "kết quả nếu cứ tiếp tục như vậy" },
-}
-
--- chọn kiểu trải bài: tự động theo câu hỏi nếu chưa chọn tay
-local function spread_of(sel, question)
-    if sel and sel > 0 then return sel end
-    local q = tostring(question or "")
-    if q == "" then return 1 end
-    local t = detect_topic(q)
-    if t == "love" then return 3 end
-    if t or is_yesno(q) then return 2 end
-    return 1
-end
-
 local function tone_of(d, tname)
     local p = d.card.pol or 0
-    local t = tname or "câu chuyện của bạn"
     if d.rev then
         if p > 0 then return "dấu hiệu tốt nhưng đang bị chậm hoặc chặn lại" end
         if p < 0 then return "điều khó đang dịu bớt, bạn có cơ hội gỡ" end
         return "năng lượng đang lệch, nên xem lại cách mình đang làm"
     end
-    if p > 0 then return "tín hiệu thuận cho " .. t end
-    if p < 0 then return "điểm cần dè chừng trong " .. t end
-    return "chưa tốt hay xấu, tùy cách bạn chọn trong " .. t
+    if p > 0 then return "tín hiệu thuận cho " .. tname end
+    if p < 0 then return "điểm cần dè chừng trong " .. tname end
+    return "chưa tốt hay xấu, tùy cách bạn chọn trong " .. tname
 end
 
-local function compose_reading(draws, question, spread)
-    local q = tostring(question or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    local topic = (q ~= "") and detect_topic(q) or nil
-    local tname = topic and TOPICS[topic].name or nil
+local function compose_reading(draws, topic, mode_i)
+    local tp = topic_of(topic)
+    local m = MODES[mode_i]
     local n = #draws
-    local sp = spread_of(spread, q)
+    local labels, roles = positions(mode_i, topic)
     local paras = {}
     local total = 0
     for i, d in ipairs(draws) do
         local c = d.card
-        local label, role
-        if n == 3 then label, role = SPREADS[sp][i], ROLES[sp][i]
-        else label, role = "LÁ BÀI", "thông điệp chính cho câu hỏi của bạn" end
-        local s = label .. " · " .. c.name .. (d.rev and " (ngược)" or "") .. "\n" ..
-            (d.rev and c.rev or c.up) .. " Ở vị trí này, lá là " .. role .. ": " .. tone_of(d, tname) .. "."
+        local s = (labels[i] or "LÁ") .. " · " .. c.name .. (d.rev and " (ngược)" or "") .. "\n" ..
+            (d.rev and c.rev or c.up) .. " Ở vị trí này, lá là " .. (roles[i] or "thông điệp") .. ": " .. tone_of(d, tp.name) .. "."
         if c.kind == "major" then s = s .. " Là lá Ẩn Chính nên sức nặng lớn hơn các lá thường." end
         paras[#paras + 1] = s
         total = total + score_of(d)
     end
-    if n == 3 then
-        local diff = score_of(draws[3]) - score_of(draws[1])
+    if n >= 3 then
+        local diff = score_of(draws[n]) - score_of(draws[1])
         local t
         if diff > 0.5 then t = "mạch chuyện đi lên, từ nặng nề dần sang thuận lợi."
-        elseif diff < -0.5 then t = "mạch chuyện đi xuống, chặng sắp tới cần thận trọng."
+        elseif diff < -0.5 then t = "mạch chuyện đi xuống, chặng cuối cần thận trọng."
         else t = "mạch chuyện khá ổn định, không đổi chiều đột ngột." end
-        paras[#paras + 1] = "TỔNG QUAN · Nhìn cả ba lá, " .. t
+        paras[#paras + 1] = "TỔNG QUAN · Với " .. tp.name .. " trong " .. m.period .. ", " .. t
     end
-    if q ~= "" and is_yesno(q) then
-        local thr = (n == 1) and 1 or 1.5
+    if topic == "decision" then
+        local thr = (n == 1) and 1 or n * 0.5
         local t
         if total >= thr then t = "bài nghiêng về CÓ / THUẬN LỢI."
         elseif total <= -thr then t = "bài nghiêng về KHÔNG / NÊN CÂN NHẮC LẠI."
         else t = "bài chưa nghiêng hẳn bên nào, kết quả tùy lựa chọn của bạn." end
         paras[#paras + 1] = "CÓ HAY KHÔNG · " .. t
-    end
-    if q ~= "" and is_timing(q) then
-        paras[#paras + 1] = "Tarot không đoán được ngày giờ; hãy xem lá cuối như xu hướng chung."
     end
     local last = draws[n]
     local adv = last.card.adv
@@ -494,7 +450,7 @@ local function compose_reading(draws, question, spread)
     if topic == "health" or topic == "money" then
         paras[#paras + 1] = "Tarot chỉ để suy ngẫm, không thay cho tư vấn y tế hay tài chính."
     end
-    return paras, q, topic
+    return paras, tp
 end
 
 local SHAPES = {}
@@ -642,7 +598,7 @@ local function fit_text(bb, text, x, y, w, hmax, sizes)
     return 0
 end
 
-local function save_history(draws, question)
+local function save_history(draws, topic, mode_i)
     pcall(function()
         local f = io.open(HISTORY, "a")
         if f then
@@ -650,8 +606,7 @@ local function save_history(draws, question)
             for _, d in ipairs(draws) do
                 parts[#parts + 1] = d.card.name .. " (" .. d.card.en .. ")" .. (d.rev and " [ngược]" or "")
             end
-            local q = (question and question ~= "") and (" ? " .. question) or ""
-            f:write(os.date("%Y-%m-%d %H:%M ") .. table.concat(parts, " | ") .. q .. "\n")
+            f:write(os.date("%Y-%m-%d %H:%M ") .. table.concat(parts, " | ") .. " ? " .. topic_of(topic).label .. " / " .. MODES[mode_i].label .. "\n")
             f:close()
         end
     end)
@@ -664,7 +619,8 @@ local Tarot = InputContainer:extend{
     allow_rev = true,
     deal_rev = false,
     view = "cards",
-    question = "",
+    topic = "overview",
+    mode = 2,
 }
 
 function Tarot:meaning_of(d)
@@ -720,41 +676,42 @@ function Tarot:draw_one(bb, x0, top, bottom, W, mx)
     end
 end
 
-function Tarot:draw_three(bb, top, bottom, W, mx)
-    local gap = 24
-    local cw = math.floor((W - 2 * mx - 2 * gap) / 3)
-    local labels = SPREADS[spread_of(self.spread, self.question)]
+function Tarot:draw_many(bb, top, bottom, W, mx)
+    local n = #self.draws
+    local gap = 20
+    local cw = math.floor((W - 2 * mx - (n - 1) * gap) / n)
+    local labels = positions(self.mode, self.topic)
     local ah = math.floor((bottom - top) * 0.5)
     local aw = math.floor(ah * 0.578)
     if aw > cw - 40 then
         aw = cw - 40
         ah = math.floor(aw / 0.578)
     end
+    local fs = n >= 4 and 22 or 24
     for i, d in ipairs(self.draws) do
         local x = mx + (i - 1) * (cw + gap)
         bb:paintBorder(x, top, cw, bottom - top, 3, BLACK, 24)
-        txt(bb, labels[i] or "", x + math.floor(cw / 2), top + 12, 26, { center = true, bold = true, color = GRAY5 })
+        txt(bb, labels[i] or "", x + math.floor(cw / 2), top + 12, 26, { center = true, bold = true, color = GRAY5, max_width = cw - 16 })
         local ax = x + math.floor((cw - aw) / 2)
         draw_card(bb, ax, top + 52, aw, ah, d.card, d.rev)
         local y = top + 52 + ah + 12
-        txt(bb, d.card.name, x + math.floor(cw / 2), y, 32, { center = true, bold = true, max_width = cw - 24 })
+        txt(bb, d.card.name, x + math.floor(cw / 2), y, n >= 4 and 28 or 32, { center = true, bold = true, max_width = cw - 24 })
         y = y + 42
         if self.deal_rev then
             local ow = math.floor(22 * 6.4)
             self:draw_orient(bb, x + math.floor((cw - ow) / 2), y, d.rev, 22)
             y = y + math.floor(22 * 1.8) + 10
         end
-        local tb = TextBoxWidget:new{ text = self:meaning_of(d), face = face(24), width = cw - 40, fgcolor = BLACK }
+        local tb = TextBoxWidget:new{ text = self:meaning_of(d), face = face(fs), width = cw - 40, fgcolor = BLACK }
         if y + tb:getSize().h <= bottom - 8 then tb:paintTo(bb, x + 20, y) end
         tb:free()
     end
 end
 
 function Tarot:draw_reading(bb, top, bottom, W, mx)
-    local paras, q, topic = compose_reading(self.draws, self.question, self.spread)
+    local paras, tp = compose_reading(self.draws, self.topic, self.mode)
     local y = top
-    local head
-    if q ~= "" then head = "Câu hỏi: " .. q else head = "Chưa đặt câu hỏi – luận giải tổng quát (bấm CÂU HỎI để hỏi)." end
+    local head = "Chủ đề: " .. tp.label .. "  ·  Thời gian: " .. MODES[self.mode].label
     local hb = TextBoxWidget:new{ text = head, face = face(34), width = W - 2 * mx, fgcolor = BLACK, bold = true }
     hb:paintTo(bb, mx, y)
     y = y + hb:getSize().h + 10
@@ -764,35 +721,47 @@ function Tarot:draw_reading(bb, top, bottom, W, mx)
     fit_text(bb, table.concat(paras, "\n\n"), mx, y, W - 2 * mx, bottom - y, { 34, 31, 28, 26, 24, 22 })
 end
 
-function Tarot:ask()
-    local InputDialog = require("ui/widget/inputdialog")
+function Tarot:pick(title, items, current, on_pick)
+    local ButtonDialog = require("ui/widget/buttondialog")
     local dlg
-    local function done(save)
-        local txtq
-        if save then txtq = dlg:getInputText() end
-        UIManager:close(dlg)
-        if save then
-            txtq = tostring(txtq or ""):gsub("[\r\n]+", " "):gsub("^%s+", ""):gsub("%s+$", "")
-            if #txtq > 240 then txtq = txtq:sub(1, 240) end
-            self.question = txtq
-            if self.draws and txtq ~= "" then self.view = "read" end
-        end
-        UIManager:setDirty(self, "full")
+    local rows, row = {}, {}
+    for i, it in ipairs(items) do
+        row[#row + 1] = {
+            text = (i == current and "● " or "") .. it,
+            callback = function()
+                UIManager:close(dlg)
+                on_pick(i)
+                UIManager:setDirty(self, "full")
+            end,
+        }
+        if #row == 2 then rows[#rows + 1] = row; row = {} end
     end
-    dlg = InputDialog:new{
-        title = "Câu hỏi của bạn",
-        input = self.question or "",
-        input_hint = "Ví dụ: Công việc sắp tới có thuận lợi không?",
-        buttons = {
-            {
-                { text = "Hủy", callback = function() done(false) end },
-                { text = "Xóa", callback = function() self.question = ""; done(false) end },
-                { text = "Lưu", is_enter_default = true, callback = function() done(true) end },
-            },
-        },
-    }
+    if #row > 0 then rows[#rows + 1] = row end
+    rows[#rows + 1] = { { text = "Đóng", callback = function() UIManager:close(dlg); UIManager:setDirty(self, "full") end } }
+    dlg = ButtonDialog:new{ title = title, buttons = rows }
     UIManager:show(dlg)
-    pcall(function() dlg:onShowKeyboard() end)
+end
+
+function Tarot:pick_topic()
+    local items, cur = {}, 1
+    for i, t in ipairs(TOPICS) do
+        items[i] = t.label
+        if t.key == self.topic then cur = i end
+    end
+    self:pick("Chọn chủ đề", items, cur, function(i) self.topic = TOPICS[i].key end)
+end
+
+function Tarot:pick_mode()
+    local items = {}
+    for i, m in ipairs(MODES) do items[i] = m.label .. " · " .. m.n .. " lá" end
+    self:pick("Chọn khoảng thời gian", items, self.mode, function(i)
+        if i ~= self.mode then
+            self.mode = i
+            self.draws = nil
+            self.view = "cards"
+            clear_imgs()
+        end
+    end)
 end
 
 function Tarot:paintTo(bb, x, y)
@@ -805,50 +774,47 @@ function Tarot:paintTo(bb, x, y)
         txt(bb, "BỐC TAROT", mx + 34, 42, 44, { bold = true, color = WHITE })
         txt(bb, os.date("%H:%M  %d/%m/%Y"), W - mx - 34, 56, 26, { right = true, color = WHITE })
         local top, bottom = 140, H - 30 - 84 - 22 - 20
-        if self.question and self.question ~= "" and self.view ~= "read" then
-            txt(bb, "Hỏi: " .. self.question, mx, top - 2, 30, { color = GRAY5, max_width = W - 2 * mx })
+        if self.view ~= "read" then
+            txt(bb, topic_of(self.topic).label .. "  ·  " .. MODES[self.mode].label, mx, top - 2, 30, { color = GRAY5, max_width = W - 2 * mx })
             top = top + 44
         end
+        local mid = math.floor((top + bottom) / 2)
         if self.shuffling then
-            txt(bb, "Đang xáo bài…", math.floor(W / 2), math.floor((top + bottom) / 2) - 40, 56, { center = true, bold = true })
-            txt(bb, "Hãy giữ câu hỏi trong đầu", math.floor(W / 2), math.floor((top + bottom) / 2) + 40, 30, { center = true, color = GRAY5 })
+            txt(bb, "Đang xáo bài…", math.floor(W / 2), mid - 40, 56, { center = true, bold = true })
+            txt(bb, "Hãy giữ chủ đề trong đầu", math.floor(W / 2), mid + 40, 30, { center = true, color = GRAY5 })
         elseif not self.draws then
-            txt(bb, "Nghĩ về một câu hỏi, rồi bấm BỐC", math.floor(W / 2), math.floor((top + bottom) / 2) - 50, 52, { center = true, bold = true })
-            txt(bb, "Bấm CÂU HỎI để nhập câu hỏi và nhận luận giải theo câu hỏi", math.floor(W / 2), math.floor((top + bottom) / 2) + 40, 30, { center = true, color = GRAY5 })
+            txt(bb, "Chọn CHỦ ĐỀ và THỜI GIAN, rồi bấm BỐC BÀI", math.floor(W / 2), mid - 50, 48, { center = true, bold = true })
+            txt(bb, "Bốc xong bấm LUẬN GIẢI để đọc theo chủ đề đã chọn", math.floor(W / 2), mid + 40, 30, { center = true, color = GRAY5 })
         elseif self.view == "read" then
             self:draw_reading(bb, top, bottom, W, mx)
         elseif #self.draws == 1 then
             self:draw_one(bb, x, top, bottom, W, mx)
         else
-            self:draw_three(bb, top, bottom, W, mx)
+            self:draw_many(bb, top, bottom, W, mx)
         end
         if self.draws and not self.shuffling and self.img_missing and self.view ~= "read" then
             txt(bb, "Chưa tải được ảnh bài – bật Wi-Fi rồi bốc lại để có ảnh", W - mx, bottom + 2, 22, { right = true, color = GRAY5 })
         end
         -- nút
         local list = {
-            { "BỐC 1 LÁ", function() self:deal_n(1) end, true, 1.2 },
-            { "BỐC 3 LÁ", function() self:deal_n(3) end, true, 1.2 },
-            { "CÂU HỎI", function() self:ask() end, false, 1.2 },
+            { "BỐC BÀI", function() self:deal_n(MODES[self.mode].n) end, true, 1.2 },
+            { "CHỦ ĐỀ ▾", function() self:pick_topic() end, false, 1.3 },
+            { "THỜI GIAN ▾", function() self:pick_mode() end, false, 1.5 },
             { self.view == "read" and "XEM BÀI" or "LUẬN GIẢI", function()
                 if not self.draws or self.shuffling then return end
                 self.view = (self.view == "read") and "cards" or "read"
                 UIManager:setDirty(self, "ui")
             end, false, 1.3 },
-            { "TRẢI BÀI", function()
-                self.spread = ((self.spread or 0) + 1) % 5
-                UIManager:setDirty(self, "ui")
-            end, false, 1.2 },
             { self.allow_rev and "NGƯỢC: BẬT" or "NGƯỢC: TẮT", function()
                 self.allow_rev = not self.allow_rev
                 UIManager:setDirty(self, "ui")
             end, false, 1.5 },
             { "LÀM TRẮNG", function()
-                self.draws, self.question, self.view, self.spread = nil, "", "cards", nil
+                self.draws, self.view = nil, "cards"
                 self.img_missing = false
                 clear_imgs()
                 UIManager:setDirty(self, "full")
-            end, false, 1.3 },
+            end, false, 1.4 },
             { "THOÁT", function() self:close() end, false, 1 },
         }
         local bh, gap = 84, 10
@@ -881,7 +847,7 @@ function Tarot:deal_n(n)
     self.view = "cards"
     UIManager:setDirty(self, "full")
     UIManager:scheduleIn(0.6, function()
-        local ok, err = pcall(function()
+        pcall(function()
             seed()
             clear_imgs()
             self.deal_rev = self.allow_rev
@@ -893,10 +859,9 @@ function Tarot:deal_n(n)
             for _, i in ipairs(list) do
                 if not have_img(i) then self.img_missing = true end
             end
-            save_history(self.draws, self.question)
+            save_history(self.draws, self.topic, self.mode)
         end)
         self.shuffling = false
-        if not ok then self.draws = self.draws or nil end
         UIManager:setDirty(self, "full")
     end)
 end
