@@ -1412,6 +1412,7 @@ local function kind_of(change)
 end
 
 local TABS = {
+    { "today", "HÔM NAY" },
     { "stocks", "CHỨNG KHOÁN" },
     { "gold", "VÀNG" },
     { "news", "TIN TỨC" },
@@ -1502,7 +1503,7 @@ local VNDash = InputContainer:extend{
     name = "vn_dash",
     covers_fullscreen = true,
     mode = "overview",
-    tab = "stocks",
+    tab = "today",
     refresh_count = 0,
 }
 
@@ -1596,6 +1597,7 @@ function VNDash:hasData(key)
     if key == "gold" then return self.gold ~= nil end
     if key == "news" then return self.news[self.news_cat] ~= nil end
     if key == "weather" then return self.weather ~= nil end
+    if key == "today" then return #self.indices > 0 and self.weather ~= nil and self.gold ~= nil end
     return true
 end
 
@@ -1605,6 +1607,7 @@ function VNDash:schedule()
     local s = is_trading_time() and cfg.interval_trading or cfg.interval_idle
     if self.tab == "weather" or self.tab == "gold" then s = math.max(s, 900) end
     if self.tab == "calendar" then s = 60 end
+    if self.tab == "today" then s = 300 end
     UIManager:scheduleIn(s, self.tick)
 end
 
@@ -1649,7 +1652,7 @@ function VNDash:refresh(manual)
     local NetworkMgr = require("ui/network/manager")
     local function work()
         local ok, err = pcall(function()
-            if key == "indices" then
+            local function load_cards()
                 local urls = {}
                 for i, c in ipairs(cfg.cards) do
                     if INDEX_MAP[c] then
@@ -1669,18 +1672,34 @@ function VNDash:refresh(manual)
                     end
                 end
                 self.indices = out
+            end
+            if key == "indices" then
+                load_cards()
+            elseif key == "today" then
+                load_cards()
+                local now = os.time()
+                if not self.gold or now - (self.gold_ts or 0) > 1800 then
+                    local gd = load_gold()
+                    if gd then self.gold, self.gold_ts = gd, now end
+                end
+                if not self.weather or now - (self.weather_ts or 0) > 1800 then
+                    local wd = load_weather()
+                    if wd then self.weather, self.weather_ts = wd, now end
+                end
             elseif key == "watch" then
                 self.watch = load_watch()
             elseif key == "top" then
                 self.top = load_top()
             elseif key == "gold" then
                 self.gold = load_gold()
+                self.gold_ts = os.time()
                 if manual then self.nav.gold = nil end
             elseif key == "news" then
                 self.news[self.news_cat] = load_category(cfg.news[self.news_cat])
                 if manual then self.nav["news" .. self.news_cat] = nil end
             elseif key == "weather" then
                 self.weather = load_weather()
+                self.weather_ts = os.time()
             end
             self.updated = os.date("%H:%M %d/%m/%Y")
         end)
@@ -1797,7 +1816,7 @@ function VNDash:drawIndexDetail(bb, W, H)
     end
 end
 
-local BUILD = "2026-11-13 b8"
+local BUILD = "2026-11-13 b9"
 local UPDATE_URL = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/main.lua"
 
 local RAW_BASE = "https://raw.githubusercontent.com/Brodekk/bang-dien-toi-thuong/main/"
@@ -2082,7 +2101,9 @@ function VNDash:paintTo(bb, x, y)
     local ok, err = pcall(function()
         self:drawHeader(bb, W, H)
         self:drawTabs(bb, W)
-        if self.tab == "stocks" then
+        if self.tab == "today" then
+            self:drawToday(bb, W, H)
+        elseif self.tab == "stocks" then
             if self.mode == "overview" then
                 self:drawOverview(bb, W, H)
             elseif self.mode == "watch" then
@@ -2276,6 +2297,12 @@ function VNDash:buttonList()
             { "TỔNG QUAN", function() self.wmode = "overview"; UIManager:setDirty(self, "full") end, (self.wmode ~= "hourly"), 1 },
             { "THEO GIỜ", function() self.wmode = "hourly"; UIManager:setDirty(self, "full") end, (self.wmode == "hourly"), 1 },
             { "LÀM MỚI", function() self:refresh(true) end, false, 1 },
+        }
+    elseif self.tab == "today" then
+        return {
+            { "CHỨNG KHOÁN", function() self:go("stocks", "overview") end, false, 1 },
+            { "BỐC TAROT", function() self:openTarot() end, false, 1 },
+            { "LÀM MỚI", function() self:refresh(true) end, true, 1 },
         }
     elseif self.tab == "calendar" then
         return {
@@ -3090,6 +3117,155 @@ function VNDash:lunar_for(d, m, y)
         self.cal_cache[key] = c
     end
     return c
+end
+
+-- ----- tab HÔM NAY: màn hình tổng hợp để trên bàn làm việc -----
+function VNDash:todayCard(bb, x, y, w, h, title)
+    bb:paintBorder(x, y, w, h, 3, BLACK, 24)
+    txt(bb, title, x + 26, y + 16, 22, { bold = true, color = Blitbuffer.COLOR_GRAY_5 })
+end
+
+function VNDash:drawToday(bb, W, H)
+    local mx = 36
+    local top, bottom = area(H)
+    local GRAY5 = Blitbuffer.COLOR_GRAY_5
+    local t = os.date("*t")
+    local gap = 22
+    local lw = math.floor((W - 2 * mx - gap) * 0.47)
+    local lx, ly, lh = mx, top, bottom - top
+    local rx = mx + lw + gap
+    local rw = W - mx - rx
+    -- ---- khung trái: giờ, ngày, câu hôm nay
+    bb:paintBorder(lx, ly, lw, lh, 3, BLACK, 26)
+    local u = math.min(lw / 740, lh / 854)
+    local function P(n) return math.floor(n * u + 0.5) end
+    local x0 = lx + P(40)
+    local cwid = lw - P(80)
+    txt(bb, os.date("%H:%M"), x0, ly + P(4), P(210), { bold = true })
+    txt(bb, WEEKDAYS[t.wday - 1] .. ", " .. t.day .. "/" .. t.month .. "/" .. t.year, x0, ly + P(290), P(40), { bold = true, max_width = cwid })
+    local lc = self:lunar_for(t.day, t.month, t.year)
+    txt(bb, "Âm lịch " .. lc.ld .. "/" .. lc.lm .. (lc.leap and " nhuận" or "") .. " · năm " .. canchi_year(lc.ly), x0, ly + P(350), P(30), { max_width = cwid })
+    txt(bb, "Ngày " .. canchi_day(t.day, t.month, t.year), x0, ly + P(396), P(26), { color = GRAY5, max_width = cwid })
+    local qy = ly + P(470)
+    bb:paintRect(x0, qy, cwid, 3, BLACK)
+    txt(bb, "CÂU HÔM NAY", x0, qy + P(16), P(22), { bold = true, color = GRAY5 })
+    local q = QUOTES[(tonumber(os.date("%j")) % #QUOTES) + 1]
+    local qb = TextBoxWidget:new{ text = "“" .. q .. "”", face = face(P(34)), width = cwid, fgcolor = BLACK, bold = true }
+    if qy + P(58) + qb:getSize().h <= ly + lh - P(70) then qb:paintTo(bb, x0, qy + P(58)) end
+    qb:free()
+    local up = self.updated and ("Cập nhật " .. self.updated .. " · tự làm mới 5 phút") or "Đang tải dữ liệu…"
+    if self.offline then up = "Mất Wi-Fi · đang thử kết nối lại" end
+    txt(bb, up, x0, ly + lh - P(52), P(22), { color = GRAY5, max_width = cwid })
+
+    -- ---- cột phải: 3 thẻ
+    local ch1 = math.floor((lh - 2 * gap) * 0.38)
+    local ch2 = math.floor((lh - 2 * gap) * 0.31)
+    local ch3 = lh - 2 * gap - ch1 - ch2
+    local y1, y2, y3 = ly, ly + ch1 + gap, ly + ch1 + ch2 + 2 * gap
+
+    -- thẻ 1: VN-Index (+ VN30 dòng phụ)
+    self:todayCard(bb, rx, y1, rw, ch1, "CHỨNG KHOÁN · " .. (is_trading_time() and "ĐANG GIAO DỊCH" or "NGOÀI GIỜ"))
+    local vn, v30
+    for _, it in ipairs(self.indices or {}) do
+        if it.id == "VNINDEX" then vn = it.data elseif it.id == "VN30" then v30 = it.data end
+    end
+    if vn then
+        local cx = rx + 26
+        txt(bb, "VN-INDEX", cx, y1 + 54, 30, { bold = true })
+        txt(bb, fmt(vn.value, 2), cx, y1 + 92, 96, { bold = true })
+        local k = kind_of(vn.change or 0)
+        local sign = (vn.change or 0) > 0 and "+" or ""
+        badge(bb, cx, y1 + ch1 - 76, 330, 56, k, sign .. fmt(vn.change, 2) .. "  (" .. sign .. fmt(vn.pct, 2) .. "%)", 26)
+        -- sparkline trong ngày
+        local hist = vn.hist or {}
+        local sx, sw = rx + math.floor(rw * 0.58), math.floor(rw * 0.38)
+        local sy, sh = y1 + 60, ch1 - 150
+        if #hist >= 2 and sh > 40 then
+            local lo, hi = math.huge, -math.huge
+            for _, v in ipairs(hist) do
+                if v < lo then lo = v end
+                if v > hi then hi = v end
+            end
+            if vn.prev then lo, hi = math.min(lo, vn.prev), math.max(hi, vn.prev) end
+            if hi - lo < 1e-6 then hi = lo + 1 end
+            local function Y(v) return sy + sh - math.floor((v - lo) / (hi - lo) * sh) end
+            if vn.prev then
+                local py = Y(vn.prev)
+                for xx = sx, sx + sw, 12 do bb:paintRect(xx, py, 6, 2, GRAY5) end
+            end
+            local n = #hist
+            local px_, py_
+            for i, v in ipairs(hist) do
+                local xx = sx + math.floor((i - 1) / (n - 1) * sw)
+                local yy = Y(v)
+                if px_ then
+                    local steps = math.max(1, math.abs(xx - px_), math.abs(yy - py_))
+                    for s = 0, steps, 2 do
+                        bb:paintRect(px_ + math.floor((xx - px_) * s / steps), py_ + math.floor((yy - py_) * s / steps), 3, 3, BLACK)
+                    end
+                end
+                px_, py_ = xx, yy
+            end
+        end
+        local sub = "Tăng " .. (vn.adv or 0) .. " · Giảm " .. (vn.dec or 0) .. " · GTGD " .. fmt(vn.val, 0) .. " tỷ"
+        if v30 then sub = "VN30 " .. fmt(v30.value, 2) .. " (" .. ((v30.change or 0) > 0 and "+" or "") .. fmt(v30.pct, 2) .. "%) · " .. sub end
+        txt(bb, sub, rx + rw - 26, y1 + ch1 - 62, 22, { right = true, color = GRAY5, max_width = rw - 400 })
+    else
+        txt(bb, self.busy and "Đang tải…" or "Chưa có dữ liệu", rx + 26, y1 + 80, 34, { bold = true })
+    end
+
+    -- thẻ 2: thời tiết
+    self:todayCard(bb, rx, y2, rw, ch2, "THỜI TIẾT · " .. tostring(cfg.place or ""))
+    local wd = self.weather
+    if wd and wd.w and wd.w.current then
+        local cur = wd.w.current
+        local cx = rx + 26
+        txt(bb, fmt(cur.temperature_2m, 0) .. "°", cx, y2 + 48, 92, { bold = true })
+        wx_icon(bb, cx + 260, y2 + math.floor(ch2 / 2) + 8, 110, wx_kind(cur.weather_code))
+        local tx = cx + 360
+        local twid = rx + rw - 26 - tx
+        txt(bb, WX_TEXT[cur.weather_code] or "", tx, y2 + 54, 32, { bold = true, max_width = twid })
+        local d = wd.w.daily
+        local line2 = ""
+        if d and d.temperature_2m_min and d.temperature_2m_max then
+            line2 = "Hôm nay " .. fmt(d.temperature_2m_min[1], 0) .. "° – " .. fmt(d.temperature_2m_max[1], 0) .. "°"
+            if d.precipitation_probability_max then line2 = line2 .. " · mưa " .. fmt(d.precipitation_probability_max[1] or 0, 0) .. "%" end
+        end
+        txt(bb, line2, tx, y2 + 100, 26, { max_width = twid })
+        local aq = wd.a and wd.a.us_aqi
+        local line3 = "Cảm giác " .. fmt(cur.apparent_temperature, 0) .. "° · Ẩm " .. fmt(cur.relative_humidity_2m, 0) .. "%"
+        if aq then line3 = line3 .. " · AQI " .. fmt(aq, 0) end
+        txt(bb, line3, tx, y2 + 140, 24, { color = GRAY5, max_width = twid })
+    else
+        txt(bb, self.busy and "Đang tải…" or "Chưa có dữ liệu", rx + 26, y2 + 70, 34, { bold = true })
+    end
+
+    -- thẻ 3: vàng
+    self:todayCard(bb, rx, y3, rw, ch3, "GIÁ VÀNG · triệu đồng/lượng")
+    local g = self.gold
+    local hero, world
+    if g and g.rows then
+        for _, r in ipairs(g.rows) do
+            if r.usd then world = world or r
+            elseif not hero and r.name and r.name:find("SJC") then hero = r end
+        end
+        if not hero then
+            for _, r in ipairs(g.rows) do if not r.usd then hero = r; break end end
+        end
+    end
+    if hero then
+        local cx = rx + 26
+        txt(bb, hero.name, cx, y3 + 50, 24, { bold = true, max_width = math.floor(rw * 0.6) })
+        txt(bb, "BÁN " .. (hero.sell and fmt(hero.sell, 2) or "—"), cx, y3 + 84, 54, { bold = true })
+        txt(bb, "MUA " .. (hero.buy and fmt(hero.buy, 2) or "—"), cx, y3 + 150, 30, { bold = true, color = GRAY5 })
+        if world then
+            txt(bb, "THẾ GIỚI", rx + rw - 26, y3 + 50, 22, { right = true, bold = true, color = GRAY5 })
+            txt(bb, fmt(world.buy, 0), rx + rw - 26, y3 + 84, 54, { right = true, bold = true })
+            txt(bb, "USD/ounce", rx + rw - 26, y3 + 150, 24, { right = true, color = GRAY5 })
+        end
+    else
+        txt(bb, self.busy and "Đang tải…" or "Chưa có dữ liệu", rx + 26, y3 + 70, 34, { bold = true })
+    end
 end
 
 function VNDash:drawCalendar(bb, W, H)
