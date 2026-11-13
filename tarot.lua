@@ -446,7 +446,7 @@ local function compose_reading(draws, topic, lay)
     local total = 0
     for i, d in ipairs(draws) do
         local c = d.card
-        local s = (labels[i] or "LÁ") .. " · " .. c.name .. (d.rev and " (ngược)" or "") .. "\n" ..
+        local s = (labels[i] or "LÁ") .. " · " .. c.en .. (d.rev and " (ngược)" or "") .. "\n" ..
             (d.rev and c.rev or c.up) .. " Ở vị trí này, lá là " .. (roles[i] or "thông điệp") .. ": " .. tone_of(d, tp.name) .. "."
         if c.kind == "major" then s = s .. " Là lá Ẩn Chính nên sức nặng lớn hơn các lá thường." end
         paras[#paras + 1] = s
@@ -687,9 +687,8 @@ function Tarot:draw_one(bb, x0, top, bottom, W, mx)
     draw_card(bb, mx, top + 5, aw, ah, c, d.rev)
     local px = mx + aw + 50
     local pw = W - mx - px
-    txt(bb, c.name, px, top + 10, 64, { bold = true, max_width = pw })
-    txt(bb, c.en, px, top + 88, 32, { color = GRAY5, max_width = pw })
-    local y = top + 140
+    txt(bb, c.en, px, top + 10, 64, { bold = true, max_width = pw })
+    local y = top + 100
     if self.deal_rev then
         local _, oh = self:draw_orient(bb, px, y, d.rev, 30)
         y = y + oh + 34
@@ -740,7 +739,7 @@ function Tarot:draw_many(bb, top, bottom, W, mx)
         local ax = x + math.floor((cw - aw) / 2)
         draw_card(bb, ax, y0 + lh, aw, ah, d.card, d.rev)
         local y = y0 + lh + ah + 8
-        txt(bb, d.card.name, x + math.floor(cw / 2), y, small and 24 or (n >= 4 and 28 or 32), { center = true, bold = true, max_width = cw - 16 })
+        txt(bb, d.card.en, x + math.floor(cw / 2), y, small and 24 or (n >= 4 and 28 or 32), { center = true, bold = true, max_width = cw - 16 })
         y = y + (small and 34 or 42)
         if self.deal_rev then
             local opx = small and 18 or 22
@@ -748,8 +747,10 @@ function Tarot:draw_many(bb, top, bottom, W, mx)
             y = y + math.floor(opx * 1.8) + 8
         end
         if rows == 1 then
-            local tb = TextBoxWidget:new{ text = self:meaning_of(d), face = face(fs), width = cw - 36, fgcolor = BLACK }
-            if y + tb:getSize().h <= y0 + rowh - 8 then tb:paintTo(bb, x + 18, y) end
+            local tb = TextBoxWidget:new{ text = self:meaning_of(d), face = face(fs), width = cw - 36, fgcolor = BLACK, alignment = "center" }
+            local th = tb:getSize().h
+            local room = y0 + rowh - 8 - y
+            if th <= room then tb:paintTo(bb, x + 18, y + math.floor((room - th) / 2)) end
             tb:free()
         end
     end
