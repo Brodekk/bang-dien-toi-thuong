@@ -401,11 +401,11 @@ local KINDS = {
     { label = "Móng ngựa · 7 lá", n = 7,
         labels = { "QUÁ KHỨ", "HIỆN TẠI", "TƯƠNG LAI GẦN", "BẠN", "NGƯỜI XUNG QUANH", "TRỞ NGẠI", "KẾT QUẢ" },
         roles = { "điều đã đưa bạn tới đây", "điều đang diễn ra", "điều sắp đến", "cách bạn đang nhìn và hành xử", "ảnh hưởng từ người và hoàn cảnh quanh bạn", "điều cần vượt qua", "nơi mọi thứ có thể dẫn tới" } },
-    { label = "Celtic Cross · 10 lá", n = 10,
-        labels = { "HIỆN TẠI", "THỬ THÁCH", "NỀN TẢNG", "QUÁ KHỨ GẦN", "MỤC TIÊU", "TƯƠNG LAI GẦN", "BẢN THÂN", "MÔI TRƯỜNG", "HY VỌNG / SỢ", "KẾT QUẢ" },
-        roles = { "trung tâm của vấn đề", "điều đang chắn ngang hoặc thử thách bạn", "gốc rễ bên dưới mọi chuyện", "điều vừa đi qua",
-            "điều bạn hướng tới hoặc có thể xảy ra", "điều sắp đến trong thời gian ngắn", "cách bạn nhìn và đối diện",
-            "người và hoàn cảnh xung quanh", "điều bạn mong và điều bạn sợ", "nơi mọi thứ có thể dẫn tới" } },
+    { label = "Celtic Cross · 10 lá", n = 10, cross = true,
+        labels = { "BẢN THÂN", "HOÀN CẢNH", "QUÁ KHỨ GẦN", "DẪN DẮT CAO SIÊU", "ẢNH HƯỞNG SÂU XA", "TƯƠNG LAI GẦN", "HY VỌNG & NỖI SỢ", "ẢNH HƯỞNG BÊN NGOÀI", "LỜI KHUYÊN", "KẾT CỤC DỰ KIẾN" },
+        roles = { "con người bạn lúc này, trung tâm của vấn đề", "điều đang chắn ngang hoặc bao quanh bạn", "điều vừa đi qua",
+            "mục tiêu cao nhất hoặc điều đang dẫn dắt bạn", "gốc rễ bên dưới mọi chuyện", "điều sắp đến trong thời gian ngắn",
+            "điều bạn mong và điều bạn sợ", "người và hoàn cảnh xung quanh", "hướng hành động mà bài gợi ý", "nơi mọi thứ có thể dẫn tới" } },
 }
 
 local function layout_of(kind, mode_i, topic)
@@ -415,7 +415,7 @@ local function layout_of(kind, mode_i, topic)
         return { n = m.n, labels = labels, roles = roles, period = m.period, trend = m.n >= 3, name = m.label }
     end
     local k = KINDS[kind]
-    return { n = k.n, labels = k.labels, roles = k.roles, period = "giai đoạn này", trend = k.trend, name = k.label }
+    return { n = k.n, labels = k.labels, roles = k.roles, period = "giai đoạn này", trend = k.trend, name = k.label, cross = k.cross }
 end
 
 local function score_of(d)
@@ -586,14 +586,21 @@ local function deal(n, allow_rev)
     return out
 end
 
-local function draw_card(bb, x, y, w, h, c, rev)
-    local key = c.idx .. "_" .. w .. "_" .. h .. (rev and "r" or "")
+local function draw_card(bb, x, y, w, h, c, rev, horiz)
+    local key = c.idx .. "_" .. w .. "_" .. h .. (rev and "r" or "") .. (horiz and "h" or "")
     local b = img_cache[key]
     if b == nil then
         b = false
         if have_img(c.idx) then
             local ok, res = pcall(function()
                 local RenderImage = require("ui/renderimage")
+                if horiz then
+                    local src = RenderImage:renderImageFile(img_file(c.idx), false, h, w)
+                    if not src then return nil end
+                    local r = src:rotatedCopy(rev and 270 or 90)
+                    src:free()
+                    return r
+                end
                 local src = RenderImage:renderImageFile(img_file(c.idx), false, w, h)
                 if src and rev then
                     local r = src:rotatedCopy(180)
@@ -712,8 +719,59 @@ function Tarot:cur_layout()
     return layout_of(self.kind, self.mode, self.topic)
 end
 
+function Tarot:draw_cross(bb, top, bottom, W, mx)
+    local lay = self:cur_layout()
+    local gap = 14
+    local ah = math.floor((bottom - top - 2 * gap) / 3)
+    local aw = math.floor(ah * 0.578)
+    local L = ah
+    local cxc = mx + aw + gap + math.floor(L / 2)
+    local rowB = top + ah + gap
+    local rowC = top + 2 * (ah + gap)
+    local D = self.draws
+    local pos = {}
+    pos[3] = { mx, rowB }
+    pos[1] = { cxc - math.floor(aw / 2), rowB }
+    pos[6] = { cxc + math.floor(L / 2) + gap, rowB }
+    pos[4] = { cxc - math.floor(aw / 2), top }
+    pos[5] = { cxc - math.floor(aw / 2), rowC }
+    for _, i in ipairs({ 3, 1, 6, 4, 5 }) do
+        draw_card(bb, pos[i][1], pos[i][2], aw, ah, D[i].card, D[i].rev)
+    end
+    local x2, y2 = cxc - math.floor(L / 2), rowB + math.floor((ah - aw) / 2)
+    draw_card(bb, x2, y2, L, aw, D[2].card, D[2].rev, true)
+    pos[2] = { x2, y2 }
+    -- cột bên phải: 7 (dưới) -> 10 (trên)
+    local sh = math.floor((bottom - top - 3 * gap) / 4)
+    local sw = math.floor(sh * 0.578)
+    local sx = W - mx - sw
+    for k = 0, 3 do
+        local i = 7 + k
+        local yy = bottom - sh - k * (sh + gap)
+        draw_card(bb, sx, yy, sw, sh, D[i].card, D[i].rev)
+        pos[i] = { sx, yy }
+    end
+    -- số thứ tự
+    for i = 1, 10 do
+        local p = pos[i]
+        bb:paintRoundedRect(p[1] + 3, p[2] + 3, 30, 30, BLACK, 15)
+        txt(bb, tostring(i), p[1] + 18, p[2] + 6, 19, { center = true, bold = true, color = WHITE })
+    end
+    -- chú giải ở giữa
+    local lx = cxc + math.floor(L / 2) + gap + aw + 36
+    local lw = sx - 30 - lx
+    local lh = 38
+    local ly = top + math.floor(((bottom - top) - 10 * lh) / 2)
+    for i = 1, 10 do
+        local d = D[i]
+        local line = i .. "  " .. lay.labels[i] .. ":  " .. d.card.en .. (self.deal_rev and (d.rev and "  (ngược)" or "") or "")
+        txt(bb, line, lx, ly + (i - 1) * lh, 23, { bold = (i == 1 or i == 10), max_width = lw })
+    end
+end
+
 function Tarot:draw_many(bb, top, bottom, W, mx)
     local n = #self.draws
+    if self:cur_layout().cross then return self:draw_cross(bb, top, bottom, W, mx) end
     local labels = self:cur_layout().labels
     local rows = n > 5 and 2 or 1
     local per = math.ceil(n / rows)
